@@ -7,48 +7,38 @@ import (
 	"strings"
 )
 
+// AppEmail ...
 type AppEmail struct {
 	cfg *config.Config
 }
 
+// New создание объекта для отправки по почте
 func New(cfg *config.Config) *AppEmail {
 	return &AppEmail{cfg: cfg}
 }
 
-// SendText Отправка сообщения по почте
-func (s *AppEmail) SendText(bodyMessage, subject, address string) error {
-	slog.Info("Send text", "email", address)
+// Send Отправка письма по email
+func (s *AppEmail) Send(bodyMessage, subject, address string, file string) error {
+	slog.Info("Send", slog.String("email", address), slog.String("file", file))
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", s.cfg.Mail.UserName)
 	m.SetHeader("To", strings.Split(address, ";")...)
 	m.SetHeader("Subject", subject)
-	m.SetBody("text/html", bodyMessage)
-
-	d := gomail.NewDialer(s.cfg.Mail.Server, s.cfg.Mail.Port, s.cfg.Mail.UserName, s.cfg.Mail.Password)
-	if err := d.DialAndSend(m); err != nil {
-		return err
+	var contentType = "text/html"
+	if s.cfg.Mail.ContentType != "" {
+		contentType = s.cfg.Mail.ContentType
 	}
-	slog.Info("Sending completed")
-	return nil
-}
+	m.SetBody(contentType, bodyMessage)
 
-// SendFile Отправка по почте файла
-func (s *AppEmail) SendFile(bodyMessage, subject, address string, file string) error {
 	if file != "" {
-		slog.Info("Send file", slog.String("file", file), slog.String("email", address))
+		m.Attach(file)
 	}
-	m := gomail.NewMessage()
-	m.SetHeader("From", s.cfg.Mail.UserName)
-	m.SetHeader("To", strings.Split(address, ";")...)
-	m.SetHeader("Subject", subject)
-	m.SetBody("text/html", bodyMessage)
-	m.Attach(file)
 
 	d := gomail.NewDialer(s.cfg.Mail.Server, s.cfg.Mail.Port, s.cfg.Mail.UserName, s.cfg.Mail.Password)
 	if err := d.DialAndSend(m); err != nil {
 		return err
 	}
-	slog.Info("Sending completed")
+	slog.Info("Sending email completed")
 	return nil
 }

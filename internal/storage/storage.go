@@ -4,14 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"kvart-info/internal/config"
 	"kvart-info/internal/model"
-	"log/slog"
 	"net/url"
-	"strconv"
-	"time"
-
-	"github.com/jmoiron/sqlx"
 )
 
 type Mssql struct {
@@ -21,10 +17,8 @@ type Mssql struct {
 }
 
 type Datastore interface {
-	// Query Выполняем запрос к БД
-	Query(query string, params map[string]interface{}) ([]map[string]interface{}, error)
-	// GetTotalData ...
-	GetTotalData() ([]*model.TotalData, error)
+	// GetTotalData получение сводной информации
+	GetTotalData() ([]model.TotalData, error)
 }
 
 // NewDB Создание подключения к БД
@@ -62,47 +56,9 @@ func NewURLConnectionString(host string, port int, database, user, password stri
 	return u.String()
 }
 
-func (s *Mssql) Query(query string, params map[string]interface{}) ([]map[string]interface{}, error) {
-	var (
-		err  error
-		rows *sqlx.Rows
-	)
-	startQuery := time.Now()
-	rows, err = s.db.NamedQuery(query, params)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+func (s *Mssql) GetTotalData() ([]model.TotalData, error) {
 
-	data := make([]map[string]interface{}, 0)
-	for rows.Next() {
-		results := make(map[string]interface{})
-		err = rows.MapScan(results)
-		if err != nil {
-			return nil, err
-		}
-		for key, val := range results {
-			switch v := val.(type) {
-			case []byte: // []byte преобразуем во Float
-				resFloat, err := strconv.ParseFloat(string(v), 64)
-				if err != nil {
-					return nil, err
-				}
-				val = resFloat
-			default:
-				val = v
-			}
-			results[key] = val
-		}
-		data = append(data, results)
-	}
-	slog.Info("Query completed", "record", len(data), "time", time.Now().Sub(startQuery).Round(time.Second))
-	return data, nil
-}
-
-func (s *Mssql) GetTotalData() ([]*model.TotalData, error) {
-
-	var data []*model.TotalData
+	var data []model.TotalData
 	stmt, err := s.db.PrepareNamedContext(s.ctx, QueryGetTotal)
 	if err != nil {
 		return nil, fmt.Errorf("failed PrepareNamedContext total: %w", err)

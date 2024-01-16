@@ -37,23 +37,23 @@ var bodyTemplateMap = `
     {{range $i, $el := .Body}}
     <tr>
         <td>
-		{{if ne .tip_name "Итого"}}
+		{{if ne .TipName "Итого"}}
 		{{(IncInt $i)}}
 		{{end}}
         </td>
         <td>
-        {{if ne .tip_name "Итого"}}
-        {{ .fin_period }} {{else}} {{ $CreatedOn }} 
+        {{if ne .TipName "Итого"}}
+        {{ .FinPeriod }} {{else}} {{ $CreatedOn }} 
         {{end}}
         </td>
-        <td>{{.tip_name}}</td>	
-		<td class="val">{{.count_build}}</td>
-        <td class="val">{{.count_occ}}</td>
-        <td class="val">{{.kol_occ_dif}}</td>
-        <td class="val">{{.flat}}</td>
-        <td class="val">{{.kol_flat_dif}}</td>
-        <td class="val">{{printf "%.2f" .total_sq}}</td>
-        <td class="val">{{.total_sq_dif}}</td>
+        <td>{{.TipName}}</td>	
+		<td class="val">{{.CountBuild}}</td>
+        <td class="val">{{.CountLic}}</td>
+        <td class="val">{{.KolOccDif}}</td>
+        <td class="val">{{.Flat}}</td>
+        <td class="val">{{.KolFlatDif}}</td>
+        <td class="val">{{printf "%.2f" .TotalSq}}</td>
+        <td class="val">{{.TotalSqDif}}</td>
     </tr>
     {{end}}
 </table>
@@ -63,3 +63,7 @@ var bodyTemplateMap = `
 </body>
 </html>
 `
+
+const tmplText = "\n" +
+	"Фин.период\tТип фонда\tДомов\tЛицевых\tПомещений\tПлощадь\n" +
+	"{{range .}}{{.FinPeriod}}\t{{.TipName}}\t{{.CountBuild}}\t{{.CountLic}}\t{{.Flat}}\t{{.TotalSq}}\n{{end}}"

@@ -9,9 +9,10 @@ build:
 	$(call print-target)
 	@go build -v -o ${APP} ${SOURCE}
 
-run:
+run: build
 	$(call print-target)
-	@go run ${SOURCE}
+	@./${APP}
+#	@go run ${SOURCE}
 
 release:
 	$(call print-target)

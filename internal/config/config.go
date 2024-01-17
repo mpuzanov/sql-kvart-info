@@ -13,7 +13,7 @@ import (
 type Config struct {
 	Env  string     `yaml:"env"`
 	DB   DBConfig   `yaml:"db"`
-	Mail MailConfig `yaml:"mail"`	
+	Mail MailConfig `yaml:"mail"`
 }
 
 // DBConfig ...

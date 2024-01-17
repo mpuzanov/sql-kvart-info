@@ -4,25 +4,23 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"kvart-info/internal/config"
 	"kvart-info/internal/model"
+	"kvart-info/pkg/logging"
 	"net/url"
+
+	"github.com/jmoiron/sqlx"
 )
 
+// Mssql ...
 type Mssql struct {
 	db  *sqlx.DB
 	ctx context.Context
 	cfg *config.Config
 }
 
-type Datastore interface {
-	// GetTotalData получение сводной информации
-	GetTotalData() ([]model.TotalData, error)
-}
-
 // NewDB Создание подключения к БД
-func NewDB(cfg *config.Config) (ds Datastore, err error) {
+func NewDB(ctx context.Context, cfg *config.Config) (*Mssql, error) {
 
 	if cfg.DB.Host == "" || cfg.DB.Port == 0 || cfg.DB.Database == "" || cfg.DB.User == "" || cfg.DB.Password == "" {
 		return nil, fmt.Errorf("не заполнены входные параметры БД")
@@ -37,7 +35,6 @@ func NewDB(cfg *config.Config) (ds Datastore, err error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.Background()
 	return &Mssql{ctx: ctx, db: db, cfg: cfg}, nil
 }
 
@@ -56,7 +53,10 @@ func NewURLConnectionString(host string, port int, database, user, password stri
 	return u.String()
 }
 
+// GetTotalData получаем сводную информацию из БД
 func (s *Mssql) GetTotalData() ([]model.TotalData, error) {
+	l := logging.LoggerFromContext(s.ctx)
+	l.Info("Executing query", "database", s.cfg.DB.Database)
 
 	var data []model.TotalData
 	stmt, err := s.db.PrepareNamedContext(s.ctx, QueryGetTotal)
@@ -70,5 +70,6 @@ func (s *Mssql) GetTotalData() ([]model.TotalData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed SelectContext total: %w", err)
 	}
+
 	return data, nil
 }

@@ -2,35 +2,39 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html/template"
 	"kvart-info/internal/config"
 	"kvart-info/internal/email"
 	"kvart-info/internal/model"
-	"log"
-	"log/slog"
+	"kvart-info/pkg/logging"
 	"strconv"
 	"text/tabwriter"
 	"time"
 )
 
-// serviceInfo ...
-type serviceInfo struct {
+// ServiceInfo ...
+type ServiceInfo struct {
+	ctx context.Context
 	cfg *config.Config
 	db  Datastore
 }
 
+// Datastore ...
 type Datastore interface {
 	// GetTotalData получение сводной информации
 	GetTotalData() ([]model.TotalData, error)
 }
 
-func New(cfg *config.Config, db Datastore) *serviceInfo {
-	return &serviceInfo{cfg: cfg, db: db}
+// New ...
+func New(ctx context.Context, cfg *config.Config, db Datastore) *ServiceInfo {
+	return &ServiceInfo{ctx: ctx, cfg: cfg, db: db}
 }
 
 // Run выполняем сервис получения данных по БД
-func (s *serviceInfo) Run() error {
+func (s *ServiceInfo) Run() error {
+	l := logging.LoggerFromContext(s.ctx)
 
 	data, err := s.GetLicTotal()
 	if err != nil {
@@ -47,7 +51,7 @@ func (s *serviceInfo) Run() error {
 		emailStatus := make(chan string)
 		go email.New(s.cfg).Send(bodyMessage, title, s.cfg.Mail.ToSendEmail, "", emailStatus)
 		status := <-emailStatus
-		slog.Info(status)
+		l.Info(status)
 
 	} else {
 		fmt.Println(bodyMessage)
@@ -56,9 +60,7 @@ func (s *serviceInfo) Run() error {
 }
 
 // GetLicTotal получаем данные
-func (s *serviceInfo) GetLicTotal() ([]model.TotalData, error) {
-
-	slog.Info("Executing query", "database", s.cfg.DB.Database)
+func (s *ServiceInfo) GetLicTotal() ([]model.TotalData, error) {
 
 	data, err := s.db.GetTotalData()
 	if err != nil {
@@ -68,7 +70,7 @@ func (s *serviceInfo) GetLicTotal() ([]model.TotalData, error) {
 }
 
 // CreateBodyText формируем письмо
-func (s *serviceInfo) CreateBodyText(data []model.TotalData) (string, string, error) {
+func (s *ServiceInfo) CreateBodyText(data []model.TotalData) (string, string, error) {
 
 	type ViewData struct {
 		Title     string
@@ -84,7 +86,7 @@ func (s *serviceInfo) CreateBodyText(data []model.TotalData) (string, string, er
 	if s.cfg.Mail.IsSendEmail {
 		t, err := template.New("").Funcs(template.FuncMap{
 			"IncInt": func(i int) string {
-				i += 1
+				i++
 				return strconv.Itoa(i)
 			},
 		}).Parse(bodyTemplateMap)
@@ -103,10 +105,10 @@ func (s *serviceInfo) CreateBodyText(data []model.TotalData) (string, string, er
 	}
 
 	// текстовый шаблон таблицы
-	itemsTmpl := template.Must(template.New("").Parse(tmplText))
+	t := template.Must(template.New("").Parse(tmplText))
 	w := tabwriter.NewWriter(&body, 5, 0, 3, ' ', 0)
-	if err := itemsTmpl.Execute(w, data); err != nil {
-		log.Fatal("error executing items template")
+	if err := t.Execute(w, data); err != nil {
+		return "", "", err
 	}
 	_ = w.Flush()
 	bodyMessage := body.String()

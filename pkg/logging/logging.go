@@ -36,6 +36,10 @@ func NewLogger(env string) *slog.Logger {
 		multi := io.MultiWriter(file, os.Stdout) //, os.Stderr
 
 		log = slog.New(slog.NewJSONHandler(multi, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	default: // If env config is invalid, set prod settings by default due to security
+		log = slog.New(
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
+		)
 	}
 	log = log.With(slog.String("env", env))
 	return log

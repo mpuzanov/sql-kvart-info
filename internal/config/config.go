@@ -2,45 +2,46 @@ package config
 
 import (
 	"errors"
-	"github.com/ilyakaznacheev/cleanenv"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 // Config ...
 type Config struct {
-	Env    string     `json:"env"`
-	Format string     `json:"format"`
-	Mail   MailConfig `json:"mail"`
-	DB     DBConfig   `json:"db"`
+	Env  string     `yaml:"env"`
+	DB   DBConfig   `yaml:"db"`
+	Mail MailConfig `yaml:"mail"`	
 }
 
 // DBConfig ...
 type DBConfig struct {
-	Host     string `json:"host" env:"HOST" env-description:"sql server host"`
-	Port     int    `json:"port" env:"PORT" env-default:"1433" env-description:"sql server port"`
-	User     string `json:"user" env:"USER"`
-	Password string `json:"password" env:"PASSWORD"`
-	Database string `json:"database" env:"DATABASE"`
+	Host     string `yaml:"host" env:"HOST" env-description:"sql server host"`
+	Port     int    `yaml:"port" env:"PORT" env-default:"1433" env-description:"sql server port"`
+	User     string `yaml:"user" env:"USER"`
+	Password string `yaml:"password" env:"PASSWORD"`
+	Database string `yaml:"database" env:"DATABASE"`
 }
 
 // MailConfig ...
 type MailConfig struct {
-	Server   string `json:"server" env:"MAIL_SERVER"`
-	Port     int    `json:"port" env:"MAIL_PORT"`
-	UseTLS   bool   `json:"useTLS" env:"MAIL_USE_TLS"`
-	UseSSL   bool   `json:"useSSL" env:"MAIL_USE_SSL"`
-	UserName string `json:"userName" env:"MAIL_USERNAME"`
-	Password string `json:"password" env:"MAIL_PASSWORD"`
+	Server   string `yaml:"server" env:"MAIL_SERVER"`
+	Port     int    `yaml:"port" env:"MAIL_PORT"`
+	UseTLS   bool   `yaml:"use_tls" env:"MAIL_USE_TLS"`
+	UseSSL   bool   `yaml:"use_ssl" env:"MAIL_USE_SSL"`
+	UserName string `yaml:"username" env:"MAIL_USERNAME"`
+	Password string `yaml:"password" env:"MAIL_PASSWORD"`
 	// ToSendEmail адрес (куда отправлять письмо)
-	ToSendEmail string `json:"toSendEmail" env:"TO_SEND_EMAIL"`
+	ToSendEmail string `yaml:"toSendEmail" env:"TO_SEND_EMAIL"`
 	// IsSendEmail признак для отправки по почте
-	IsSendEmail bool   `json:"isSendEmail" env:"IS_SEND_EMAIL"`
-	ContentType string `json:"contentType" env-default:"text/html"` //text/html  text/plain
+	IsSendEmail bool   `yaml:"isSendEmail" env:"IS_SEND_EMAIL"`
+	ContentType string `yaml:"contentType" env-default:"text/html"` //text/html  text/plain
+	Timeout     int    `yaml:"timeout" env-default:"10"`
 }
 
-// MustConfig ...
+// MustConfig загрузка файла конфига
 func MustConfig(fileConf string) *Config {
 	if _, err := os.Stat(fileConf); errors.Is(err, os.ErrNotExist) {
 		workingDir, _ := os.Executable()

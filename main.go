@@ -1,16 +1,17 @@
 package main
 
 import (
-	_ "github.com/denisenkom/go-mssqldb"
 	"kvart-info/internal/config"
 	"kvart-info/internal/services"
 	"kvart-info/internal/storage"
 	"log/slog"
 	"os"
+
+	_ "github.com/denisenkom/go-mssqldb"
 )
 
 func main() {
-	cfg := config.MustConfig("config.json")
+	cfg := config.MustConfig("config.yml")
 
 	//установка логгера по умолчанию на основании конфиг файла
 	logger := NewLogger(cfg.Env)

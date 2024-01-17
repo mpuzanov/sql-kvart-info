@@ -15,7 +15,7 @@
 *.zip
 *.xls
 *.xlsx
-config*.json
+config*.yml
 
 *.code-workspace
 go.sum

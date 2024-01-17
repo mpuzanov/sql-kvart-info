@@ -7,7 +7,6 @@ import (
 	"kvart-info/internal/config"
 	"kvart-info/internal/email"
 	"kvart-info/internal/model"
-	"kvart-info/internal/storage"
 	"log"
 	"log/slog"
 	"strconv"
@@ -15,23 +14,23 @@ import (
 	"time"
 )
 
-// Info ...
-type Info struct {
+// serviceInfo ...
+type serviceInfo struct {
 	cfg *config.Config
-	db  storage.Datastore
+	db  Datastore
 }
 
-// InfoData ...
-type InfoData interface {
-	GetLicTotal(isSendMail bool) error
+type Datastore interface {
+	// GetTotalData получение сводной информации
+	GetTotalData() ([]model.TotalData, error)
 }
 
-func New(cfg *config.Config, db storage.Datastore) *Info {
-	return &Info{cfg: cfg, db: db}
+func New(cfg *config.Config, db Datastore) *serviceInfo {
+	return &serviceInfo{cfg: cfg, db: db}
 }
 
 // Run выполняем сервис получения данных по БД
-func (s *Info) Run() error {
+func (s *serviceInfo) Run() error {
 
 	data, err := s.GetLicTotal()
 	if err != nil {
@@ -57,7 +56,7 @@ func (s *Info) Run() error {
 }
 
 // GetLicTotal получаем данные
-func (s *Info) GetLicTotal() ([]model.TotalData, error) {
+func (s *serviceInfo) GetLicTotal() ([]model.TotalData, error) {
 
 	slog.Info("Executing query", "database", s.cfg.DB.Database)
 
@@ -69,7 +68,7 @@ func (s *Info) GetLicTotal() ([]model.TotalData, error) {
 }
 
 // CreateBodyText формируем письмо
-func (s *Info) CreateBodyText(data []model.TotalData) (string, string, error) {
+func (s *serviceInfo) CreateBodyText(data []model.TotalData) (string, string, error) {
 
 	type ViewData struct {
 		Title     string

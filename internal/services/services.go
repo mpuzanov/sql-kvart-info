@@ -11,7 +11,6 @@ import (
 	"log"
 	"log/slog"
 	"strconv"
-	"strings"
 	"text/tabwriter"
 	"time"
 )
@@ -45,10 +44,12 @@ func (s *Info) Run() error {
 	}
 
 	if s.cfg.Mail.IsSendEmail {
-		err = email.New(s.cfg).Send(bodyMessage, title, s.cfg.Mail.ToSendEmail, "")
-		if err != nil {
-			return err
-		}
+
+		emailStatus := make(chan string)
+		go email.New(s.cfg).Send(bodyMessage, title, s.cfg.Mail.ToSendEmail, "", emailStatus)
+		status := <-emailStatus
+		slog.Info(status)
+
 	} else {
 		fmt.Println(bodyMessage)
 	}
@@ -81,7 +82,7 @@ func (s *Info) CreateBodyText(data []model.TotalData) (string, string, error) {
 	)
 	var body bytes.Buffer
 
-	if strings.ToLower(s.cfg.Mail.ContentType) == "text/html" {
+	if s.cfg.Mail.IsSendEmail {
 		t, err := template.New("").Funcs(template.FuncMap{
 			"IncInt": func(i int) string {
 				i += 1

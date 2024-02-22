@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"kvart-info/pkg/email"
 	"log"
 	"os"
 	"path/filepath"
@@ -11,9 +12,13 @@ import (
 
 // Config ...
 type Config struct {
-	Env  string     `yaml:"env"`
-	DB   DBConfig   `yaml:"db"`
-	Mail MailConfig `yaml:"mail"`
+	Env  string           `yaml:"env"`
+	DB   DBConfig         `yaml:"db"`
+	Mail email.MailConfig `yaml:"mail"`
+	// ToSendEmail адрес (куда отправлять письмо)
+	ToSendEmail string `yaml:"to_send_email" env:"TO_SEND_EMAIL"`
+	// IsSendEmail признак для отправки по почте
+	IsSendEmail bool `yaml:"is_send_email" env:"IS_SEND_EMAIL"`
 }
 
 // DBConfig ...
@@ -23,22 +28,6 @@ type DBConfig struct {
 	User     string `yaml:"user" env:"USER"`
 	Password string `yaml:"password" env:"PASSWORD"`
 	Database string `yaml:"database" env:"DATABASE"`
-}
-
-// MailConfig ...
-type MailConfig struct {
-	Server   string `yaml:"server" env:"MAIL_SERVER"`
-	Port     int    `yaml:"port" env:"MAIL_PORT"`
-	UseTLS   bool   `yaml:"use_tls" env:"MAIL_USE_TLS"`
-	UseSSL   bool   `yaml:"use_ssl" env:"MAIL_USE_SSL"`
-	UserName string `yaml:"username" env:"MAIL_USERNAME"`
-	Password string `yaml:"password" env:"MAIL_PASSWORD"`
-	// ToSendEmail адрес (куда отправлять письмо)
-	ToSendEmail string `yaml:"toSendEmail" env:"TO_SEND_EMAIL"`
-	// IsSendEmail признак для отправки по почте
-	IsSendEmail bool   `yaml:"isSendEmail" env:"IS_SEND_EMAIL"`
-	ContentType string `yaml:"contentType" env-default:"text/html"` //text/html  text/plain
-	Timeout     int    `yaml:"timeout" env-default:"10"`
 }
 
 // MustConfig загрузка файла конфига

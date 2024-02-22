@@ -35,7 +35,7 @@ func NewLogger(env string) *slog.Logger {
 		file, _ := os.OpenFile(fileLog, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		multi := io.MultiWriter(file, os.Stdout) //, os.Stderr
 
-		log = slog.New(slog.NewJSONHandler(multi, &slog.HandlerOptions{Level: slog.LevelInfo}))
+		log = slog.New(slog.NewJSONHandler(multi, &slog.HandlerOptions{Level: slog.LevelInfo, AddSource: true}))
 	default: // If env config is invalid, set prod settings by default due to security
 		log = slog.New(
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),

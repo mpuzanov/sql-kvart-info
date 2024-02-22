@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"html/template"
 	"kvart-info/internal/config"
-	"kvart-info/internal/email"
 	"kvart-info/internal/model"
+	"kvart-info/pkg/email"
 	"kvart-info/pkg/logging"
 	"strconv"
+	"strings"
 	"text/tabwriter"
 	"time"
 )
@@ -18,17 +19,17 @@ import (
 type ServiceInfo struct {
 	ctx context.Context
 	cfg *config.Config
-	db  Datastore
+	db  DBInfo
 }
 
-// Datastore ...
-type Datastore interface {
+// DBInfo ...
+type DBInfo interface {
 	// GetTotalData получение сводной информации
 	GetTotalData() ([]model.TotalData, error)
 }
 
 // New ...
-func New(ctx context.Context, cfg *config.Config, db Datastore) *ServiceInfo {
+func New(ctx context.Context, cfg *config.Config, db DBInfo) *ServiceInfo {
 	return &ServiceInfo{ctx: ctx, cfg: cfg, db: db}
 }
 
@@ -46,12 +47,10 @@ func (s *ServiceInfo) Run() error {
 		return err
 	}
 
-	if s.cfg.Mail.IsSendEmail {
+	if s.cfg.IsSendEmail {
 
-		emailStatus := make(chan string)
-		go email.New(s.cfg).Send(bodyMessage, title, s.cfg.Mail.ToSendEmail, "", emailStatus)
-		status := <-emailStatus
-		l.Info(status)
+		emailStatus, _ := email.New(s.cfg.Mail).Send(bodyMessage, title, s.cfg.ToSendEmail, "")
+		l.Info(emailStatus)
 
 	} else {
 		fmt.Println(bodyMessage)
@@ -83,11 +82,14 @@ func (s *ServiceInfo) CreateBodyText(data []model.TotalData) (string, string, er
 	)
 	var body bytes.Buffer
 
-	if s.cfg.Mail.IsSendEmail {
+	if s.cfg.IsSendEmail {
 		t, err := template.New("").Funcs(template.FuncMap{
 			"IncInt": func(i int) string {
 				i++
 				return strconv.Itoa(i)
+			},
+			"getValidName": func(src string) string {
+				return getValidFileName(src)
 			},
 		}).Parse(bodyTemplateMap)
 		if err != nil {
@@ -105,7 +107,15 @@ func (s *ServiceInfo) CreateBodyText(data []model.TotalData) (string, string, er
 	}
 
 	// текстовый шаблон таблицы
-	t := template.Must(template.New("").Parse(tmplText))
+	t := template.Must(template.New("").Funcs(template.FuncMap{
+		"IncInt": func(i int) string {
+			i++
+			return strconv.Itoa(i)
+		},
+		"getValidName": func(src string) string {
+			return getValidFileName(src)
+		},
+	}).Parse(tmplText))
 	w := tabwriter.NewWriter(&body, 5, 0, 3, ' ', 0)
 	if err := t.Execute(w, data); err != nil {
 		return "", "", err
@@ -114,4 +124,15 @@ func (s *ServiceInfo) CreateBodyText(data []model.TotalData) (string, string, er
 	bodyMessage := body.String()
 
 	return bodyMessage, title, nil
+}
+
+// getValidFileName убираем недопустимые символы в имени файла
+func getValidFileName(src string) string {
+	const noValidChars string = `?.,;:=+*/\"|<>[]! `
+	f := func(char rune) bool {
+		// признак символа разделителя
+		return strings.ContainsRune(noValidChars, char)
+	}
+	words := strings.FieldsFunc(src, f)
+	return strings.Join(words, " ")
 }

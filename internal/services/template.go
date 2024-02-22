@@ -46,7 +46,7 @@ var bodyTemplateMap = `
         {{ .FinPeriod }} {{else}} {{ $CreatedOn }} 
         {{end}}
         </td>
-        <td>{{.TipName}}</td>	
+        <td>{{(getValidName .TipName)}}</td>	
 		<td class="val">{{.CountBuild}}</td>
         <td class="val">{{.CountLic}}</td>
         <td class="val">{{.KolOccDif}}</td>
@@ -66,4 +66,4 @@ var bodyTemplateMap = `
 
 const tmplText = "\n" +
 	"Фин.период\tТип фонда\tДомов\tЛицевых\tПомещений\tПлощадь\n" +
-	"{{range .}}{{.FinPeriod}}\t{{.TipName}}\t{{.CountBuild}}\t{{.CountLic}}\t{{.Flat}}\t{{.TotalSq}}\n{{end}}"
+	"{{range .}}{{.FinPeriod}}\t{{(getValidName .TipName)}}\t{{.CountBuild}}\t{{.CountLic}}\t{{.Flat}}\t{{.TotalSq}}\n{{end}}"

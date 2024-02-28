@@ -1,7 +1,7 @@
 package model
 
-// TotalData ...
-type TotalData struct {
+// SummaryInfo ...
+type SummaryInfo struct {
 	FinID      int64   `db:"fin_id"`
 	FinPeriod  string  `db:"fin_period"`
 	TipName    string  `db:"tip_name"`

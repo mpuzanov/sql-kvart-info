@@ -15,6 +15,30 @@ const (
 	envProd  = "prod"
 )
 
+type (
+	// Logger ...
+	Logger = slog.Logger
+	// Value ...
+	Value = slog.Value
+)
+
+var (
+	// StringAttr алиасы типов
+	StringAttr = slog.String
+	// BoolAttr ...
+	BoolAttr = slog.Bool
+	// AnyAttr ...
+	AnyAttr = slog.Any
+	// DurationAttr ...
+	DurationAttr = slog.Duration
+	// IntAttr ...
+	IntAttr = slog.Int
+	// GroupValue ...
+	GroupValue = slog.GroupValue
+	// Group ...
+	Group = slog.Group
+)
+
 // NewLogger ...
 func NewLogger(env string) *slog.Logger {
 	var log *slog.Logger

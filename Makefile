@@ -28,8 +28,8 @@ run: build ## Run program
 
 test: ## go test with race detector and code covarage
 	$(call print-target)
-	@go test $(GO_TEST_DIRS)
-#	@go test -v $(GO_TEST_DIRS)
+	go test -v -cover -race ./internal/...
+.PHONY: test
 
 test-cover: ## go test with race detector and code covarage
 	$(call print-target)
@@ -43,12 +43,17 @@ lint:  ## Lint the source files
 	@go vet ${GO_SRC_DIRS}
 	@golint ${GO_SRC_DIRS}
 
+linter-golangci: ### check by golangci linter
+	$(call print-target)
+	golangci-lint run
+.PHONY: linter-golangci	
+
 clean: ## Clean build directory
 	rm -f ./bin/${APP}
 	rmdir ./bin
 	rm -f coverage.*
 
-release:
+release: test lint
 	$(call print-target)
 	rm -rf ${RELEASE_DIR}${APP}*
 	GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o ${APP} ${SOURCE}

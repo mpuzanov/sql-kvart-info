@@ -9,8 +9,8 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-// MailConfig ...
-type MailConfig struct {
+// Config ...
+type Config struct {
 	Server           string `yaml:"server" env:"mail_server"`
 	Port             int    `yaml:"port" env:"mail_port"`
 	UseTLS           bool   `yaml:"use_tls" env:"mail_use_tls" env-default:"false"`
@@ -22,17 +22,8 @@ type MailConfig struct {
 	TimeoutRetryFail int    `yaml:"timeout_count_retry_fail" env:"mail_count_retry_fail"  env-default:"5"`
 }
 
-// AppEmail ...
-type AppEmail MailConfig
-
-// New создание объекта для отправки по почте
-func New(cfg MailConfig) *AppEmail {
-	v := AppEmail(cfg)
-	return &v
-}
-
 // Send Отправка письма по email
-func (cfg *AppEmail) Send(bodyMessage, subject, toAddress string, file string) (string, error) {
+func (cfg *Config) Send(bodyMessage, subject, toAddress string, file string) (string, error) {
 	var err error
 
 	m := gomail.NewMessage()

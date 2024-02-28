@@ -1,14 +1,44 @@
-package storage
+package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"kvart-info/internal/model"
-	"kvart-info/pkg/logging"
+	"kvart-info/pkg/mssql"
 )
 
-// QueryGetTotal Запрос итогов по БД
-var QueryGetTotal = `
+// Repository ...
+type Repository struct {
+	*mssql.MSSQL
+}
+
+// New ...
+func New(ms *mssql.MSSQL) *Repository {
+	return &Repository{ms}
+}
+
+// Get получаем сводную информацию из БД
+func (r *Repository) Get(ctx context.Context) ([]model.SummaryInfo, error) {
+
+	var data []model.SummaryInfo
+	stmt, err := r.DB.PrepareNamedContext(ctx, QuerySummaryInfo)
+	if err != nil {
+		return nil, fmt.Errorf("failed GetTotalData PrepareNamedContext: %w", err)
+	}
+	err = stmt.SelectContext(ctx, &data, map[string]interface{}{})
+	if err == sql.ErrNoRows {
+		return data, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed GetTotalData SelectContext: %w", err)
+	}
+
+	return data, nil
+}
+
+// QuerySummaryInfo Запрос для получения итогов по БД
+var QuerySummaryInfo = `
 SELECT max(ot.fin_id) AS fin_id
      , FORMAT(max(t_cur.start_date), 'MMMM yyyy') AS fin_period
      , coalesce(ot.name,N'Итого') AS tip_name
@@ -60,24 +90,3 @@ WHERE ot.payms_value=1
 	and ot.raschet_no=0
 GROUP BY ot.name WITH ROLLUP
 `
-
-// GetTotalData получаем сводную информацию из БД
-func (s *Storage) GetTotalData() ([]model.TotalData, error) {
-	l := logging.LoggerFromContext(s.ctx)
-	l.Info("Executing query", "database", s.cfg.DB.Database)
-
-	var data []model.TotalData
-	stmt, err := s.db.PrepareNamedContext(s.ctx, QueryGetTotal)
-	if err != nil {
-		return nil, fmt.Errorf("failed PrepareNamedContext total: %w", err)
-	}
-	err = stmt.SelectContext(s.ctx, &data, map[string]interface{}{})
-	if err == sql.ErrNoRows {
-		return data, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed SelectContext total: %w", err)
-	}
-
-	return data, nil
-}

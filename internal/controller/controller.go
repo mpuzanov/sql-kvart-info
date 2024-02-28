@@ -7,8 +7,10 @@ import (
 	"kvart-info/pkg/logging"
 )
 
-// UseCase ...
-type UseCase interface {
+// useсase ...
+//
+//go:generate mockery --name useсase
+type usecase interface {
 	GetSummaryInfo(ctx context.Context) ([]model.SummaryInfo, error)
 }
 
@@ -16,10 +18,10 @@ type UseCase interface {
 type Controller struct {
 	cfg *config.Config
 	log *logging.Logger
-	uc  UseCase
+	uc  usecase
 }
 
 // New ...
-func New(cfg *config.Config, log *logging.Logger, uc UseCase) *Controller {
+func New(cfg *config.Config, log *logging.Logger, uc usecase) *Controller {
 	return &Controller{cfg: cfg, log: log, uc: uc}
 }

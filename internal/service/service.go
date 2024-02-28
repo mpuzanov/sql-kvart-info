@@ -5,30 +5,25 @@ import (
 	"kvart-info/internal/model"
 )
 
-// SummaryInfoService ...
-type SummaryInfoService interface {
-	GetSummaryInfo(ctx context.Context) ([]model.SummaryInfo, error)
-}
-
-// repositorySummaryInfo ...
+//go:generate mockery --name repository
 type repository interface {
 	Get(ctx context.Context) ([]model.SummaryInfo, error)
 }
 
-// UseCase ...
-type UseCase struct {
+// Usecase ...
+type Usecase struct {
 	repo repository
 }
 
 // New ...
-func New(r repository) *UseCase {
-	return &UseCase{
+func New(r repository) *Usecase {
+	return &Usecase{
 		repo: r,
 	}
 }
 
 // GetSummaryInfo получаем данные
-func (uc *UseCase) GetSummaryInfo(ctx context.Context) ([]model.SummaryInfo, error) {
+func (uc *Usecase) GetSummaryInfo(ctx context.Context) ([]model.SummaryInfo, error) {
 
 	data, err := uc.repo.Get(ctx)
 	if err != nil {

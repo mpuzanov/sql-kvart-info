@@ -13,10 +13,6 @@ GO_SRC_DIRS := $(shell \
 	find . -name "*.go" -not -path "./vendor/*" | \
 	xargs -I {} dirname {}  | \
 	uniq)
-GO_TEST_DIRS := $(shell \
-	find . -name "*_test.go" -not -path "./vendor/*" | \
-	xargs -I {} dirname {}  | \
-	uniq)
 
 build: ## Build program
 	$(call print-target)
@@ -52,6 +48,12 @@ clean: ## Clean build directory
 	rm -f ./bin/${APP}
 	rmdir ./bin
 	rm -f coverage.*
+
+mock:
+	mockery --all
+#	mockery --recursive=true --inpackage --name=repository
+#	mockery --recursive=true --inpackage --name=usecase
+.PHONY: mock
 
 release: test lint
 	$(call print-target)

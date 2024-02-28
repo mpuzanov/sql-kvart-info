@@ -3,9 +3,10 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"kvart-info/internal/model"
 	"kvart-info/pkg/mssql"
+
+	"github.com/pkg/errors"
 )
 
 // Repository ...
@@ -24,14 +25,14 @@ func (r *Repository) Get(ctx context.Context) ([]model.SummaryInfo, error) {
 	var data []model.SummaryInfo
 	stmt, err := r.DB.PrepareNamedContext(ctx, QuerySummaryInfo)
 	if err != nil {
-		return nil, fmt.Errorf("failed GetTotalData PrepareNamedContext: %w", err)
+		return nil, errors.Wrap(err, "Get PrepareNamedContext")
 	}
 	err = stmt.SelectContext(ctx, &data, map[string]interface{}{})
 	if err == sql.ErrNoRows {
 		return data, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed GetTotalData SelectContext: %w", err)
+		return nil, errors.Wrap(err, "Get SelectContext")
 	}
 
 	return data, nil

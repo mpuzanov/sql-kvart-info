@@ -13,28 +13,19 @@ import (
 )
 
 // OutputInfo вывод информации или на почту или на экран
-func (c *Controller) OutputInfo() error {
+func (c *Controller) OutputInfo() (string, string, error) {
 
 	data, err := c.uc.GetSummaryInfo(context.Background())
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	bodyMessage, title, err := c.CreateBodyText(data)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
-	if c.cfg.IsSendEmail && c.cfg.ToSendEmail != "" {
-		objEmail := c.cfg.Mail
-		emailStatus, _ := objEmail.Send(bodyMessage, title, c.cfg.ToSendEmail, "")
-		c.log.Info(emailStatus)
-		return nil
-	}
-
-	fmt.Println(bodyMessage)
-	return nil
-
+	return bodyMessage, title, nil
 }
 
 // CreateBodyText формируем письмо

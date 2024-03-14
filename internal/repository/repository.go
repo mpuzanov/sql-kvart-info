@@ -2,11 +2,8 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"kvart-info/internal/model"
 	"kvart-info/pkg/mssql"
-
-	"github.com/pkg/errors"
 )
 
 // Repository ...
@@ -20,21 +17,16 @@ func New(ms *mssql.MSSQL) *Repository {
 }
 
 // Get получаем сводную информацию из БД
-func (r *Repository) Get(ctx context.Context) ([]model.SummaryInfo, error) {
+func (r *Repository) GetByTip(ctx context.Context, tip_id any) ([]model.SummaryInfo, error) {
 
 	var data []model.SummaryInfo
-	stmt, err := r.DB.PrepareNamedContext(ctx, QuerySummaryInfo)
+	p := map[string]interface{}{
+		"tip_id": tip_id,
+	}
+	err := r.GetSelect(QuerySummaryInfo, &data, p)
 	if err != nil {
-		return nil, errors.Wrap(err, "Get PrepareNamedContext")
+		return nil, err
 	}
-	err = stmt.SelectContext(ctx, &data, map[string]interface{}{})
-	if err == sql.ErrNoRows {
-		return data, nil
-	}
-	if err != nil {
-		return nil, errors.Wrap(err, "Get SelectContext")
-	}
-
 	return data, nil
 }
 
@@ -89,5 +81,6 @@ CROSS APPLY  (
      ) AS t_prev
 WHERE ot.payms_value=1 
 	and ot.raschet_no=0
+     and (ot.id=:tip_id OR :tip_id is null)
 GROUP BY ot.name WITH ROLLUP
 `

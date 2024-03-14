@@ -1,11 +1,15 @@
 package mssql
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"net/url"
+	"time"
+
+	"errors"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/pkg/errors"
 )
 
 // Config .
@@ -21,32 +25,40 @@ type Config struct {
 
 // MSSQL ...
 type MSSQL struct {
-	DB *sqlx.DB
+	DB  *sqlx.DB
+	Cfg *Config
 }
+
+var ErrBadConfigDB = errors.New("не заполнены входные параметры БД")
 
 // New Создание подключения к БД
 func New(cfg *Config) (*MSSQL, error) {
 
 	if cfg.Host == "" || cfg.Port == 0 || cfg.Database == "" || cfg.User == "" || cfg.Password == "" {
-		return nil, fmt.Errorf("не заполнены входные параметры БД")
+		return nil, ErrBadConfigDB
 	}
 	dsn := cfg.getDatabaseURL()
 	db, err := sqlx.Open("sqlserver", dsn)
 	if err != nil {
-		return nil, errors.Wrap(err, "sqlx.Open")
+		return nil, fmt.Errorf(" sqlx.Open : %w", err)
 	}
 	err = db.Ping()
 	if err != nil {
-		return nil, errors.Wrap(err, "sqlx.Ping")
+		return nil, fmt.Errorf(" sqlx.Ping : %w", err)
 	}
-	return &MSSQL{DB: db}, nil
+	return &MSSQL{DB: db, Cfg: cfg}, nil
 }
 
 // Close -.
-func (r *MSSQL) Close() {
-	if r.DB != nil {
-		r.DB.Close()
+func (ms *MSSQL) Close() {
+	if ms.DB != nil {
+		ms.DB.Close()
 	}
+}
+
+// SetTimeout ...
+func (ms *MSSQL) SetTimeout(timeout int) {
+	ms.Cfg.TimeoutQuery = timeout
 }
 
 // getDatabaseURL "sqlserver://user:password@host:port?database=database_name"
@@ -64,4 +76,27 @@ func (d Config) getDatabaseURL() string {
 		RawQuery: v.Encode(),
 	}
 	return u.String()
+}
+
+// Get получаем данные из запроса
+func (ms *MSSQL) GetSelect(query string, dest any, params map[string]interface{}) error {
+
+	// ограничим время выполнения запроса
+	dur := time.Duration(ms.Cfg.TimeoutQuery) * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), dur)
+	defer cancel()
+
+	stmt, err := ms.DB.PrepareNamedContext(ctx, query)
+	if err != nil {
+		return fmt.Errorf(" [GetSelect] PrepareNamedContext : %w", err)
+	}
+	err = stmt.SelectContext(ctx, dest, params)
+	if err == sql.ErrNoRows {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf(" [GetSelect] SelectContext : %w", err)
+	}
+
+	return nil
 }

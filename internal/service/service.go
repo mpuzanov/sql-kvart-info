@@ -7,7 +7,7 @@ import (
 
 //go:generate mockery --name repository
 type repository interface {
-	Get(ctx context.Context) ([]model.SummaryInfo, error)
+	GetByTip(ctx context.Context, tip_id any) ([]model.SummaryInfo, error)
 }
 
 // Usecase ...
@@ -24,8 +24,8 @@ func New(r repository) *Usecase {
 
 // GetSummaryInfo получаем данные
 func (uc *Usecase) GetSummaryInfo(ctx context.Context) ([]model.SummaryInfo, error) {
-
-	data, err := uc.repo.Get(ctx)
+	var tipID any = nil
+	data, err := uc.repo.GetByTip(ctx, tipID)
 	if err != nil {
 		return nil, err
 	}

@@ -35,7 +35,7 @@ func (n NotifyEmail) Send() (string, error) {
 	return objEmail.Send(n.BodyMessage, n.Title, n.ToSendEmail, "")
 }
 
-// NotifyCli для вывода на экра
+// NotifyCli для вывода на экран
 type NotifyCli struct {
 	BodyMessage string
 	Writer      io.Writer

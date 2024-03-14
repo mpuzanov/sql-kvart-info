@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"kvart-info/internal/config"
 	"kvart-info/internal/controller"
 	"kvart-info/internal/controller/notify"
@@ -9,20 +10,17 @@ import (
 	"kvart-info/pkg/logging"
 	"kvart-info/pkg/mssql"
 	"os"
-
-	"github.com/pkg/errors"
 )
 
 // Run ...
 func Run(cfg *config.Config) error {
 
 	logger := logging.NewLogger(cfg.Env)
-
 	logger.Debug("debug", "cfg", cfg)
 
 	mssql, err := mssql.New(&cfg.DB)
 	if err != nil {
-		return errors.Wrap(err, "mssql.New")
+		return fmt.Errorf("mssql.New : %w", err)
 	}
 	defer mssql.Close()
 
@@ -32,7 +30,7 @@ func Run(cfg *config.Config) error {
 
 	bodyMessage, title, err := controller.New(cfg, logger, infoUseCase).OutputInfo()
 	if err != nil {
-		return errors.Wrap(err, "OutputInfo")
+		return fmt.Errorf("controller OutputInfo : %w", err)
 	}
 
 	if cfg.IsSendEmail && cfg.ToSendEmail != "" {
@@ -45,7 +43,7 @@ func Run(cfg *config.Config) error {
 		}
 		emailStatus, err := notify.New(objNotify).Send()
 		if err != nil {
-			return errors.Wrap(err, "NotifyEmail")
+			return fmt.Errorf("NotifyEmail : %w", err)
 		}
 		logger.Info(emailStatus)
 		return nil

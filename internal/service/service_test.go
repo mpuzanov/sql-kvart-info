@@ -20,8 +20,8 @@ func TestUsecase_GetSummaryInfo(t *testing.T) {
 		gotErr error
 	}{
 		{name: "пустая структура", want: []model.SummaryInfo{}, gotErr: nil},
-		{name: "есть ошибка 1", want: nil, gotErr: errors.New("Get PrepareNamedContext")},
-		{name: "есть ошибка 2", want: nil, gotErr: errors.New("Get SelectContext")},
+		{name: "есть ошибка 1", want: nil, gotErr: errors.New("[GetSelect] PrepareNamedContext")},
+		{name: "есть ошибка 2", want: nil, gotErr: errors.New("[GetSelect] SelectContext")},
 		{name: "заполненная структура",
 			want:   []model.SummaryInfo{{FinID: 1, TipName: "УК", CountBuild: 10, CountLic: 90}},
 			gotErr: nil},
@@ -30,7 +30,7 @@ func TestUsecase_GetSummaryInfo(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			mockRepo := mockRepository{}
-			mockRepo.On("Get", mock.Anything).Return(tt.want, tt.gotErr)
+			mockRepo.On("GetByTip", mock.Anything, mock.Anything).Return(tt.want, tt.gotErr)
 			uc := New(&mockRepo)
 			ctx := context.Background()
 

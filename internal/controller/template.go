@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"kvart-info/internal/model"
-	"kvart-info/pkg/util"
+	"kvart-info/pkg/utils"
 	"strconv"
 	"text/tabwriter"
 	"time"
@@ -49,7 +49,7 @@ func (c *Controller) CreateBodyText(data []model.SummaryInfo) (string, string, e
 				return strconv.Itoa(i)
 			},
 			"getValidName": func(src string) string {
-				return util.GetValidFileName(src)
+				return utils.GetValidFileName(src)
 			},
 		}).Parse(bodyTemplateMap)
 		if err != nil {
@@ -73,7 +73,7 @@ func (c *Controller) CreateBodyText(data []model.SummaryInfo) (string, string, e
 			return strconv.Itoa(i)
 		},
 		"getValidName": func(src string) string {
-			return util.GetValidFileName(src)
+			return utils.GetValidFileName(src)
 		},
 	}).Parse(tmplText))
 	w := tabwriter.NewWriter(&body, 5, 0, 3, ' ', 0)

@@ -15,7 +15,7 @@ import (
 // Run ...
 func Run(cfg *config.Config) error {
 
-	logger := logging.NewLogger(cfg.Env)
+	logger := logging.NewEnv(cfg.Env)
 	logger.Debug("debug", "cfg", cfg)
 
 	mssql, err := mssql.New(&cfg.DB)

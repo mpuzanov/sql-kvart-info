@@ -23,7 +23,7 @@ func (r *Repository) GetByTip(ctx context.Context, tip_id any) ([]model.SummaryI
 	p := map[string]interface{}{
 		"tip_id": tip_id,
 	}
-	err := r.GetSelect(QuerySummaryInfo, &data, p)
+	err := r.NamedSelect(&data, QuerySummaryInfo, p)
 	if err != nil {
 		return nil, err
 	}

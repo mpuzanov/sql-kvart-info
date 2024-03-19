@@ -6,9 +6,10 @@ require (
 	github.com/denisenkom/go-mssqldb v0.12.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
+	go.uber.org/multierr v1.11.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (

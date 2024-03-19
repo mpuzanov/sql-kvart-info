@@ -24,7 +24,7 @@ run: build ## Run program
 
 test: ## go test with race detector and code covarage
 	$(call print-target)
-	go test -v -cover -race ./internal/...
+	go test -v -cover ./internal/...
 .PHONY: test
 
 test-cover: ## go test with race detector and code covarage

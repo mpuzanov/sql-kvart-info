@@ -9,15 +9,15 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// User Пользователь БД
-type User struct {
-	Name      string
-	Email     string
-	CreatedAt time.Time `db:"created_at"`
+// Person человек
+type Person struct {
+	LastName    string     `db:"last_name"`
+	Birthdate   *time.Time `db:"birthdate"`
+	Salary      *float64
+	IsOwnerFlat *bool `db:"is_owner_flat"` // признак владельца помещения
+	Email       string
+	CreatedAt   time.Time `db:"created_at"`
 }
-
-// Users список пользователей
-type Users []User
 
 // DBSuite структура для набора тестов с БД
 type TestDBSuite struct {
@@ -26,8 +26,8 @@ type TestDBSuite struct {
 }
 
 var (
-	dbName    = "users_test"
-	tableName = fmt.Sprintf("%s.dbo.users", dbName)
+	dbName    = "go_db_test"
+	tableName = fmt.Sprintf("%s.dbo.people", dbName)
 )
 
 func TestTestDBSuite(t *testing.T) {
@@ -52,17 +52,22 @@ func (its *TestDBSuite) TearDownSuite() {
 func setupDatabase(its *TestDBSuite) {
 	its.T().Log("setting up database")
 
-	_, err := its.db.DBX.Exec(fmt.Sprintf(`CREATE DATABASE %s`, dbName))
+	_, err := its.db.DBX.Exec(fmt.Sprintf(`DROP DATABASE IF EXISTS %s; CREATE DATABASE %s`, dbName, dbName))
 	if err != nil {
 		its.FailNowf("unable to create database", err.Error())
 	}
 	its.T().Logf("База [%s] создана\n", dbName)
 
-	_, err = its.db.DBX.Exec(fmt.Sprintf(`CREATE TABLE %s (
-		[name] varchar(50) PRIMARY KEY,
-		email varchar(100) UNIQUE NOT NULL,
+	query := fmt.Sprintf(`CREATE TABLE %s (
+		last_name varchar(50) PRIMARY KEY,
+		birthdate datetime,
+		salary decimal(15,2),
+		is_owner_flat bit,
+		email varchar(100) UNIQUE,
 		created_at datetime NOT NULL DEFAULT current_timestamp
-	)`, tableName))
+	)`, tableName)
+
+	_, err = its.db.DBX.Exec(query)
 	if err != nil {
 		its.FailNowf("unable to create table", err.Error())
 	}
@@ -92,13 +97,14 @@ func tearDownDatabase(its *TestDBSuite) {
 func (ts *TestDBSuite) TestData1() {
 
 	dataInsert := map[string]interface{}{
-		"Name":  "admin",
-		"Email": "email@example.com",
+		"LastName": "Иванов",
+		"Email":    "ivan@example.com",
+		//"is_owner_flat": true,
 	}
 	ts.T().Logf("dataInsert: %#v", dataInsert)
 
 	ts.Suite.Run("insert Test", func() {
-		query := fmt.Sprintf(`INSERT INTO %s (Name, Email) VALUES (:Name, :Email)`, tableName)
+		query := fmt.Sprintf(`INSERT INTO %s (last_name, Email) VALUES (:LastName, :Email)`, tableName)
 		count, err := ts.db.NamedExec(query, dataInsert)
 		ts.Require().NoError(err)
 		ts.Equal(int64(1), count)
@@ -106,30 +112,30 @@ func (ts *TestDBSuite) TestData1() {
 
 	//===========================================================
 	ts.Suite.Run("select Test", func() {
-		query := fmt.Sprintf(`select name, email, created_at from %s`, tableName)
-		var users []User
-		err := ts.db.Select(&users, query)
+		query := fmt.Sprintf(`select * from %s`, tableName)
+		var people []Person
+		err := ts.db.Select(&people, query)
 		ts.Require().NoError(err)
-		ts.Len(users, 1)
-		ts.Equal("admin", users[0].Name)
-		ts.T().Logf("%+v", users)
+		ts.Len(people, 1)
+		ts.Equal("Иванов", people[0].LastName)
+		ts.T().Logf("%+v", people)
 
 		// ===========================================================
 		ts.T().Log("select Test where")
-		query = fmt.Sprintf(`select name, email, created_at from %s where name=:Name`, tableName)
-		var users2 []User
-		err = ts.db.NamedSelect(&users2, query, map[string]interface{}{"Name": "admin"})
+		query = fmt.Sprintf(`select last_name, email, created_at from %s where last_name=:Name`, tableName)
+		var people2 []Person
+		err = ts.db.NamedSelect(&people2, query, map[string]interface{}{"Name": "Иванов"})
 		ts.Require().NoError(err)
-		ts.Len(users, 1)
-		ts.Equal("email@example.com", users[0].Email)
-		ts.T().Logf("%+v", users)
+		ts.Len(people2, 1)
+		ts.Equal("ivan@example.com", people2[0].Email)
+		ts.T().Logf("%+v", people2)
 	})
 
 	//===========================================================
 	ts.Suite.Run("update Test", func() {
-		query := fmt.Sprintf(`UPDATE %s SET email=:Email where name=:Name`, tableName)
+		query := fmt.Sprintf(`UPDATE %s SET email=:Email where last_name=:Name`, tableName)
 		dataUpdate := map[string]interface{}{
-			"Name":  "admin",
+			"Name":  "Иванов",
 			"Email": "email_update@example.com",
 		}
 		ts.T().Logf("dataUpdate: %+v", dataUpdate)
@@ -140,14 +146,14 @@ func (ts *TestDBSuite) TestData1() {
 
 	//===========================================================
 	ts.Suite.Run("delete Test", func() {
-		query := fmt.Sprintf(`delete from %s where name=:Name`, tableName)
+		query := fmt.Sprintf(`delete from %s where last_name=:Name`, tableName)
 		dataDelete := map[string]interface{}{
-			"Name": "admin",
+			"Name": "Иванов",
 		}
 		ts.T().Logf("dataDelete: %+v", dataDelete)
 		count, err := ts.db.NamedExec(query, dataDelete)
 		ts.Require().NoError(err)
-		ts.Equal(int64(1), count)
+		ts.Equal(int64(1), count, "удалено")
 	})
 }
 
@@ -155,24 +161,24 @@ func (ts *TestDBSuite) TestData2() {
 
 	// batch insert with maps
 	dtIns := []map[string]interface{}{
-		{"Name": "admin", "Email": "email@example.com"},
-		{"Name": "manager", "Email": "manager@gmail.com"},
-		{"Name": "analyst", "Email": "analyst@mail.ru"},
+		{"LastName": "Сидоров", "Email": "sidr@example.com", "Birthdate": time.Date(2000, 2, 21, 0, 0, 0, 0, time.UTC)},
+		{"LastName": "Кузнецов", "Email": "kuz@gmail.com", "Birthdate": nil},
+		{"LastName": "Петров", "Email": "petr@mail.ru", "Birthdate": nil},
 	}
 	ts.T().Logf("данные для вставки: %+v", dtIns)
-	query := fmt.Sprintf(`INSERT INTO %s (Name, Email) VALUES (:Name, :Email)`, tableName)
+	query := fmt.Sprintf(`INSERT INTO %s (last_name, Email, Birthdate) VALUES (:LastName, :Email, :Birthdate)`, tableName)
 	_, err := ts.db.NamedExec(query, dtIns)
 	ts.NoError(err)
 
 	//==================================================
-	query = fmt.Sprintf(`select name, email from %s`, tableName)
+	query = fmt.Sprintf(`select * from %s`, tableName)
 	resultMap, err := ts.db.SelectMaps(query)
 	ts.Require().NoError(err)
 	ts.Len(resultMap, 3)
 	ts.T().Logf("получим в map: %+v", resultMap)
 
 	//==================================================
-	var resultSlice []User
+	var resultSlice []Person
 	err = ts.db.Select(&resultSlice, query)
 	ts.Require().NoError(err)
 	ts.Len(resultSlice, 3)

@@ -134,3 +134,58 @@ func (ms *MSSQL) NamedSelectMaps(query string, arg interface{}) (ret []map[strin
 
 	return ms.SelectMaps(ms.DBX.Rebind(nq), args...)
 }
+
+// Get ...
+func (ms *MSSQL) Get(dest interface{}, query string, args ...interface{}) error {
+
+	// ограничим время выполнения запроса
+	dur := time.Duration(ms.Cfg.TimeoutQuery) * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), dur)
+	defer cancel()
+
+	if err := sqlx.GetContext(ctx, ms.DBX, dest, query, args...); err != nil {
+		return sqlErr(err, query, args...)
+	}
+
+	return nil
+}
+
+// NamedGet ...
+func (ms *MSSQL) NamedGet(dest interface{}, query string, arg interface{}) error {
+	nq, args, err := namedQuery(query, arg)
+	if err != nil {
+		return err
+	}
+
+	return ms.Get(dest, ms.DBX.Rebind(nq), args...)
+}
+
+// GetMap ...
+func (ms *MSSQL) GetMap(query string, args ...interface{}) (ret map[string]interface{}, err error) {
+	// ограничим время выполнения запроса
+	dur := time.Duration(ms.Cfg.TimeoutQuery) * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), dur)
+	defer cancel()
+
+	row := ms.DBX.QueryRowxContext(ctx, query, args...)
+	if row.Err() != nil {
+		return nil, sqlErr(row.Err(), query, args...)
+	}
+
+	ret = map[string]interface{}{}
+	if err := row.MapScan(ret); err != nil {
+		return nil, sqlErr(err, query, args...)
+	}
+
+	return ret, nil
+}
+
+// NamedGetMap ...
+func (ms *MSSQL) NamedGetMap(query string, arg interface{}) (ret map[string]interface{}, err error) {
+	nq, args, err := namedQuery(query, arg)
+	if err != nil {
+		return nil, err
+	}
+
+	return ms.GetMap(ms.DBX.Rebind(nq), args...)
+}

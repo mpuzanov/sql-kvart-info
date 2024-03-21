@@ -1,6 +1,16 @@
 package mssql
 
+/*
+запуск тестов
+go test -v -cover ./pkg/mssql
+
+go test -race -covermode=atomic -coverprofile=coverage.out ./pkg/mssql
+go tool cover -html=coverage.out -o coverage.html
+@rm coverage.out
+*/
+
 import (
+	"database/sql"
 	"fmt"
 	"testing"
 	"time"
@@ -36,7 +46,7 @@ func TestTestDBSuite(t *testing.T) {
 
 func (ts *TestDBSuite) SetupSuite() {
 
-	config := NewConfig().WithPassword("123")
+	config := NewConfig().WithPassword("123").WithDB("master")
 	db, err := New(config)
 	if err != nil {
 		ts.T().Fatalf("cannot connect to [master] : %v", err)
@@ -101,12 +111,12 @@ func (ts *TestDBSuite) TestData1() {
 		"Email":    "ivan@example.com",
 		//"is_owner_flat": true,
 	}
-	ts.T().Logf("dataInsert: %#v", dataInsert)
+	//ts.T().Logf("dataInsert: %#v", dataInsert)
 
 	ts.Suite.Run("insert Test", func() {
 		query := fmt.Sprintf(`INSERT INTO %s (last_name, Email) VALUES (:LastName, :Email)`, tableName)
 		count, err := ts.db.NamedExec(query, dataInsert)
-		ts.Require().NoError(err)
+		ts.NoError(err)
 		ts.Equal(int64(1), count)
 	})
 
@@ -115,20 +125,48 @@ func (ts *TestDBSuite) TestData1() {
 		query := fmt.Sprintf(`select * from %s`, tableName)
 		var people []Person
 		err := ts.db.Select(&people, query)
-		ts.Require().NoError(err)
+		ts.NoError(err)
 		ts.Len(people, 1)
 		ts.Equal("Иванов", people[0].LastName)
-		ts.T().Logf("%+v", people)
+		//ts.T().Logf("%+v", people)
 
 		// ===========================================================
 		ts.T().Log("select Test where")
 		query = fmt.Sprintf(`select last_name, email, created_at from %s where last_name=:Name`, tableName)
 		var people2 []Person
 		err = ts.db.NamedSelect(&people2, query, map[string]interface{}{"Name": "Иванов"})
-		ts.Require().NoError(err)
+		ts.NoError(err)
 		ts.Len(people2, 1)
 		ts.Equal("ivan@example.com", people2[0].Email)
-		ts.T().Logf("%+v", people2)
+		//ts.T().Logf("%+v", people2)
+	})
+
+	//===========================================================
+	ts.Suite.Run("Get Test", func() {
+		query := fmt.Sprintf(`select count(*) from %s`, tableName)
+		var count int
+		err := ts.db.Get(&count, query)
+		ts.NoError(err)
+		ts.Equal(1, count)
+		//ts.T().Logf("count: %d", count)
+
+		// ===========================================================
+		ts.T().Log("Get Test where")
+		query = fmt.Sprintf(`select last_name, email, created_at from %s where last_name=:Name`, tableName)
+		person := Person{}
+		err = ts.db.NamedGet(&person, query, map[string]interface{}{"Name": "Иванов"})
+		ts.NoError(err)
+		ts.Equal("ivan@example.com", person.Email)
+		//ts.T().Logf("person: %+v", person)
+	})
+
+	//===========================================================
+	ts.Suite.Run("Get Map", func() {
+		query := fmt.Sprintf(`select last_name, email, created_at from %s where last_name=:Name`, tableName)
+		person, err := ts.db.NamedGetMap(query, map[string]interface{}{"Name": "Иванов"})
+		ts.NoError(err)
+		ts.Equal("ivan@example.com", person["email"])
+		//ts.T().Logf("person: %+v", person)
 	})
 
 	//===========================================================
@@ -138,7 +176,7 @@ func (ts *TestDBSuite) TestData1() {
 			"Name":  "Иванов",
 			"Email": "email_update@example.com",
 		}
-		ts.T().Logf("dataUpdate: %+v", dataUpdate)
+		//ts.T().Logf("dataUpdate: %+v", dataUpdate)
 		count, err := ts.db.NamedExec(query, dataUpdate)
 		ts.Require().NoError(err)
 		ts.Equal(int64(1), count)
@@ -150,14 +188,14 @@ func (ts *TestDBSuite) TestData1() {
 		dataDelete := map[string]interface{}{
 			"Name": "Иванов",
 		}
-		ts.T().Logf("dataDelete: %+v", dataDelete)
+		//ts.T().Logf("dataDelete: %+v", dataDelete)
 		count, err := ts.db.NamedExec(query, dataDelete)
 		ts.Require().NoError(err)
 		ts.Equal(int64(1), count, "удалено")
 	})
 }
 
-func (ts *TestDBSuite) TestData2() {
+func (ts *TestDBSuite) TestDataSelect() {
 
 	// batch insert with maps
 	dtIns := []map[string]interface{}{
@@ -165,7 +203,7 @@ func (ts *TestDBSuite) TestData2() {
 		{"LastName": "Кузнецов", "Email": "kuz@gmail.com", "Birthdate": nil},
 		{"LastName": "Петров", "Email": "petr@mail.ru", "Birthdate": nil},
 	}
-	ts.T().Logf("данные для вставки: %+v", dtIns)
+	//ts.T().Logf("данные для вставки: %+v", dtIns)
 	query := fmt.Sprintf(`INSERT INTO %s (last_name, Email, Birthdate) VALUES (:LastName, :Email, :Birthdate)`, tableName)
 	_, err := ts.db.NamedExec(query, dtIns)
 	ts.NoError(err)
@@ -173,14 +211,32 @@ func (ts *TestDBSuite) TestData2() {
 	//==================================================
 	query = fmt.Sprintf(`select * from %s`, tableName)
 	resultMap, err := ts.db.SelectMaps(query)
-	ts.Require().NoError(err)
+	ts.NoError(err)
 	ts.Len(resultMap, 3)
-	ts.T().Logf("получим в map: %+v", resultMap)
+	//ts.T().Logf("получим в map: %+v", resultMap)
 
-	//==================================================
 	var resultSlice []Person
 	err = ts.db.Select(&resultSlice, query)
 	ts.Require().NoError(err)
 	ts.Len(resultSlice, 3)
-	ts.T().Logf("получим в slice: %+v", resultSlice)
+	//ts.T().Logf("получим в slice: %+v", resultSlice)
+	//==================================================
+
+	query = fmt.Sprintf(`select * from %s where last_name=:Name`, tableName)
+	p := []map[string]interface{}{{"Name": "Кузнецов"}}
+	resultMap2, err := ts.db.NamedSelectMaps(query, p)
+	ts.NoError(err)
+	ts.Len(resultMap2, 1)
+	//ts.T().Logf("получим в map: %+v", resultMap2)
+}
+
+func (ts *TestDBSuite) TestEmptyData() {
+	ts.Suite.Run("Get EmptyData", func() {
+		query := fmt.Sprintf(`select last_name, email, created_at from %s where last_name=:Name`, tableName)
+		person := Person{}
+		err := ts.db.NamedGet(&person, query, map[string]interface{}{"Name": "Большунов"})
+		ts.ErrorIs(err, sql.ErrNoRows)
+		//ts.T().Log(err)
+		//ts.T().Logf("person: %+v", person)
+	})
 }

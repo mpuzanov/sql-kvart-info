@@ -44,6 +44,6 @@ func (ms *MSSQL) Close() error {
 }
 
 // SetTimeout установка таймаута для выполнения запроса
-func (ms *MSSQL) SetTimeout(timeout int) {
-	ms.Cfg.TimeoutQuery = timeout
+func (ms *MSSQL) SetTimeout(timeout uint) {
+	ms.Cfg.TimeoutQuery = int(timeout)
 }

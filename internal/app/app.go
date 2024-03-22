@@ -23,6 +23,7 @@ func Run(cfg *config.Config) error {
 		return fmt.Errorf("dbwrap.New : %w", err)
 	}
 	defer dbsql.Close()
+	logger.Debug("DB", "cfg.DB", cfg.DB.String())
 
 	repoInfo := repository.New(dbsql)
 

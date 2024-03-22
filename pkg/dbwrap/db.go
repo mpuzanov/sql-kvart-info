@@ -5,7 +5,6 @@ import (
 
 	"errors"
 
-	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -21,12 +20,11 @@ var ErrBadConfigDB = errors.New("не заполнены параметры по
 // New Создание подключения к БД
 func New(cfg *Config) (*DBSQL, error) {
 
-	if cfg.Host == "" || cfg.Port == 0 || cfg.Database == "" || cfg.User == "" || cfg.Password == "" {
+	if cfg.DriverName != "sqlite3" && (cfg.Host == "" || cfg.Database == "" || cfg.User == "") {
 		return nil, ErrBadConfigDB
 	}
-	driverName := "sqlserver"
-	dsn := cfg.getDatabaseURL(driverName)
-	db, err := sqlx.Connect(driverName, dsn)
+	dsn := cfg.GetDatabaseURL()
+	db, err := sqlx.Connect(cfg.DriverName, dsn)
 	if err != nil {
 		return nil, fmt.Errorf(" sqlx.Connect : %w", err)
 	}

@@ -1,8 +1,11 @@
-package dbwrap
+package postgres
 
 /*
+go get github.com/lib/pq
+
 запуск тестов
 go test -v -cover ./pkg/dbwrap
+go test -v -cover ./pkg/dbwrap/postgres
 
 go test -race -covermode=atomic -coverprofile=coverage.out ./pkg/dbwrap
 go tool cover -html=coverage.out -o coverage.html
@@ -12,31 +15,35 @@ go tool cover -html=coverage.out -o coverage.html
 import (
 	"database/sql"
 	"fmt"
+	"kvart-info/pkg/dbwrap"
 	"testing"
 	"time"
+
+	_ "github.com/lib/pq"
 
 	"github.com/stretchr/testify/suite"
 )
 
 // Person человек
 type Person struct {
-	LastName    string     `faker:"lang=rus" db:"last_name"`
+	LastName    string     `db:"last_name"`
 	Birthdate   *time.Time `db:"birthdate"`
-	Salary      *float64   `faker:"amount"`
-	IsOwnerFlat *bool      `db:"is_owner_flat"` // признак владельца помещения
-	Email       string     `faker:"email"`
-	CreatedAt   time.Time  `faker:"-" db:"created_at"`
+	Salary      *float64
+	IsOwnerFlat *bool     `db:"is_owner_flat"` // признак владельца помещения
+	Email       string    `db:"email"`
+	CreatedAt   time.Time `db:"created_at"`
 }
 
 // DBSuite структура для набора тестов с БД
 type TestDBSuite struct {
 	suite.Suite
-	db *DBSQL // коннект к БД master
+	db  *dbwrap.DBSQL
+	cfg *dbwrap.Config
 }
 
 var (
 	dbName    = "go_db_test"
-	tableName = fmt.Sprintf("%s.dbo.people", dbName)
+	tableName = fmt.Sprintf("%s.public.people", dbName)
 )
 
 func TestTestDBSuite(t *testing.T) {
@@ -45,12 +52,13 @@ func TestTestDBSuite(t *testing.T) {
 
 func (ts *TestDBSuite) SetupSuite() {
 
-	config := NewConfig().WithPassword("123").WithDB("master")
-	db, err := New(config)
+	config := dbwrap.NewConfig("postgres").WithPassword("123")
+	db, err := dbwrap.New(config)
 	if err != nil {
-		ts.T().Fatalf("cannot connect to [master] : %v", err)
+		ts.T().Fatalf("cannot connect db: %v", err)
 	}
 	ts.db = db
+	ts.cfg = config
 	setupDatabase(ts)
 }
 
@@ -60,47 +68,70 @@ func (ts *TestDBSuite) TearDownSuite() {
 
 func setupDatabase(ts *TestDBSuite) {
 	ts.T().Log("setting up database")
-
-	_, err := ts.db.DBX.Exec(fmt.Sprintf(`DROP DATABASE IF EXISTS %s; CREATE DATABASE %s`, dbName, dbName))
+	//==================================================================
+	query := fmt.Sprintf(`DROP DATABASE IF EXISTS %s;`, dbName)
+	_, err := ts.db.DBX.Exec(query)
 	if err != nil {
-		ts.FailNowf("unable to create database", err.Error())
+		ts.FailNowf("unable to drop database", "[%s] %s", query, err.Error())
+	}
+	query = fmt.Sprintf(`CREATE DATABASE %s;`, dbName)
+	_, err = ts.db.DBX.Exec(query)
+	if err != nil {
+		ts.FailNowf("unable to create database", "[%s] %s", query, err.Error())
 	}
 	ts.T().Logf("База [%s] создана\n", dbName)
-
-	query := fmt.Sprintf(`CREATE TABLE %s (
+	//==================================================================
+	db, err := dbwrap.New(ts.cfg.WithDB(dbName))
+	if err != nil {
+		ts.FailNowf("cannot connect db:", "[%s] %s", dbName, err.Error())
+	}
+	ts.db = db
+	ts.T().Log("connected database ", dbName)
+	//==================================================================
+	query = fmt.Sprintf(`CREATE TABLE %s (
 		last_name varchar(50) PRIMARY KEY,
-		birthdate datetime,
+		birthdate DATE,
 		salary decimal(15,2),
-		is_owner_flat bit,
+		is_owner_flat BOOLEAN,
 		email varchar(100) UNIQUE,
-		created_at datetime NOT NULL DEFAULT current_timestamp
-	)`, tableName)
+		created_at timestamp NOT NULL DEFAULT now()
+	);`, tableName)
 
 	_, err = ts.db.DBX.Exec(query)
 	if err != nil {
-		ts.FailNowf("unable to create table", err.Error())
+		ts.FailNowf("unable to create table", "[%s] %s", tableName, err.Error())
 	}
 	ts.T().Logf("Таблица [%s] создана\n", tableName)
 
 }
 
 func tearDownDatabase(ts *TestDBSuite) {
-	ts.T().Log("tearing down database")
+	t := ts.T()
+	t.Log("tearing down database")
 
 	_, err := ts.db.DBX.Exec(fmt.Sprintf(`DROP TABLE %s`, tableName))
 	if err != nil {
 		ts.FailNowf("unable to drop table", err.Error())
 	}
-
-	_, err = ts.db.DBX.Exec(fmt.Sprintf(`DROP DATABASE %s`, dbName))
-	if err != nil {
-		ts.FailNowf("unable to drop database", err.Error())
-	}
+	t.Log("droped table:", tableName)
 
 	err = ts.db.Close()
 	if err != nil {
 		ts.FailNowf("unable to close database", err.Error())
 	}
+
+	db, err := dbwrap.New(ts.cfg.WithDB("postgres"))
+	if err != nil {
+		t.Fatalf("cannot connect db: %v", err)
+	}
+	ts.db = db
+	t.Log("connected database:", "postgres")
+
+	_, err = ts.db.DBX.Exec(fmt.Sprintf(`DROP DATABASE IF EXISTS %s`, dbName))
+	if err != nil {
+		ts.FailNowf("unable to drop database", err.Error())
+	}
+	t.Log("droped database:", dbName)
 }
 
 func (ts *TestDBSuite) TestData1() {
@@ -128,12 +159,12 @@ func (ts *TestDBSuite) TestData1() {
 		ts.Len(people, 1)
 		ts.Equal("Иванов", people[0].LastName)
 		//ts.T().Logf("%+v", people)
-
-		// ===========================================================
-		ts.T().Log("select Test where")
-		query = fmt.Sprintf(`select last_name, email, created_at from %s where last_name=:Name`, tableName)
+	})
+	// ===========================================================
+	ts.Suite.Run("select Test where", func() {
+		query := fmt.Sprintf(`select last_name, email, created_at from %s where last_name=:Name`, tableName)
 		var people2 []Person
-		err = ts.db.NamedSelect(&people2, query, map[string]interface{}{"Name": "Иванов"})
+		err := ts.db.NamedSelect(&people2, query, map[string]interface{}{"Name": "Иванов"})
 		ts.NoError(err)
 		ts.Len(people2, 1)
 		ts.Equal("ivan@example.com", people2[0].Email)
@@ -148,12 +179,12 @@ func (ts *TestDBSuite) TestData1() {
 		ts.NoError(err)
 		ts.Equal(1, count)
 		//ts.T().Logf("count: %d", count)
-
-		// ===========================================================
-		ts.T().Log("Get Test where")
-		query = fmt.Sprintf(`select last_name, email, created_at from %s where last_name=:Name`, tableName)
+	})
+	// ===========================================================
+	ts.Suite.Run("Get Test where", func() {
+		query := fmt.Sprintf(`select last_name, email, created_at from %s where last_name=:Name`, tableName)
 		person := Person{}
-		err = ts.db.NamedGet(&person, query, map[string]interface{}{"Name": "Иванов"})
+		err := ts.db.NamedGet(&person, query, map[string]interface{}{"Name": "Иванов"})
 		ts.NoError(err)
 		ts.Equal("ivan@example.com", person.Email)
 		//ts.T().Logf("person: %+v", person)
@@ -195,7 +226,6 @@ func (ts *TestDBSuite) TestData1() {
 }
 
 func (ts *TestDBSuite) TestDataSelect() {
-	t := ts.T()
 
 	// batch insert with maps
 	dtIns := []map[string]interface{}{
@@ -204,7 +234,7 @@ func (ts *TestDBSuite) TestDataSelect() {
 		{"LastName": "Петров", "Email": "peter@example.com", "Birthdate": nil},
 	}
 
-	t.Logf("данные для вставки: %+v", dtIns)
+	//ts.T().Logf("данные для вставки: %+v", dtIns)
 	query := fmt.Sprintf(`INSERT INTO %s (last_name, Email, Birthdate) VALUES (:LastName, :Email, :Birthdate)`, tableName)
 	_, err := ts.db.NamedExec(query, dtIns)
 	ts.NoError(err)
@@ -237,7 +267,6 @@ func (ts *TestDBSuite) TestEmptyData() {
 		person := Person{}
 		err := ts.db.NamedGet(&person, query, map[string]interface{}{"Name": "Большунов"})
 		ts.ErrorIs(err, sql.ErrNoRows)
-		//ts.T().Log(err)
 		//ts.T().Logf("person: %+v", person)
 	})
 }

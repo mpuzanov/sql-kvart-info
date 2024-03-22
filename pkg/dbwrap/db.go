@@ -1,15 +1,16 @@
-package mssql
+package dbwrap
 
 import (
 	"fmt"
 
 	"errors"
 
+	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/jmoiron/sqlx"
 )
 
-// MSSQL ...
-type MSSQL struct {
+// DBSQL ...
+type DBSQL struct {
 	DBX *sqlx.DB
 	Cfg *Config
 }
@@ -18,32 +19,26 @@ type MSSQL struct {
 var ErrBadConfigDB = errors.New("не заполнены параметры подключения к БД")
 
 // New Создание подключения к БД
-func New(cfg *Config) (*MSSQL, error) {
+func New(cfg *Config) (*DBSQL, error) {
 
 	if cfg.Host == "" || cfg.Port == 0 || cfg.Database == "" || cfg.User == "" || cfg.Password == "" {
 		return nil, ErrBadConfigDB
 	}
-	dsn := cfg.getDatabaseURL()
-	db, err := sqlx.Open("sqlserver", dsn)
+	driverName := "sqlserver"
+	dsn := cfg.getDatabaseURL(driverName)
+	db, err := sqlx.Connect(driverName, dsn)
 	if err != nil {
-		return nil, fmt.Errorf(" sqlx.Open : %w", err)
+		return nil, fmt.Errorf(" sqlx.Connect : %w", err)
 	}
-	err = db.Ping()
-	if err != nil {
-		return nil, fmt.Errorf(" sqlx.Ping : %w", err)
-	}
-	return &MSSQL{DBX: db, Cfg: cfg}, nil
+	return &DBSQL{DBX: db, Cfg: cfg}, nil
 }
 
 // Close -.
-func (ms *MSSQL) Close() error {
-	if ms.DBX != nil {
-		return ms.DBX.Close()
-	}
-	return nil
+func (d *DBSQL) Close() error {
+	return d.DBX.Close()
 }
 
 // SetTimeout установка таймаута для выполнения запроса
-func (ms *MSSQL) SetTimeout(timeout uint) {
-	ms.Cfg.TimeoutQuery = int(timeout)
+func (d *DBSQL) SetTimeout(timeout uint) {
+	d.Cfg.TimeoutQuery = int(timeout)
 }

@@ -1,10 +1,10 @@
-package mssql
+package dbwrap
 
 /*
 запуск тестов
-go test -v -cover ./pkg/mssql
+go test -v -cover ./pkg/dbwrap
 
-go test -race -covermode=atomic -coverprofile=coverage.out ./pkg/mssql
+go test -race -covermode=atomic -coverprofile=coverage.out ./pkg/dbwrap
 go tool cover -html=coverage.out -o coverage.html
 @rm coverage.out
 */
@@ -15,24 +15,23 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/stretchr/testify/suite"
 )
 
 // Person человек
 type Person struct {
-	LastName    string     `db:"last_name"`
+	LastName    string     `faker:"lang=rus" db:"last_name"`
 	Birthdate   *time.Time `db:"birthdate"`
-	Salary      *float64
-	IsOwnerFlat *bool `db:"is_owner_flat"` // признак владельца помещения
-	Email       string
-	CreatedAt   time.Time `db:"created_at"`
+	Salary      *float64   `faker:"amount"`
+	IsOwnerFlat *bool      `db:"is_owner_flat"` // признак владельца помещения
+	Email       string     `faker:"email"`
+	CreatedAt   time.Time  `faker:"-" db:"created_at"`
 }
 
 // DBSuite структура для набора тестов с БД
 type TestDBSuite struct {
 	suite.Suite
-	db *MSSQL // коннект к БД master
+	db *DBSQL // коннект к БД master
 }
 
 var (
@@ -55,18 +54,18 @@ func (ts *TestDBSuite) SetupSuite() {
 	setupDatabase(ts)
 }
 
-func (its *TestDBSuite) TearDownSuite() {
-	tearDownDatabase(its)
+func (ts *TestDBSuite) TearDownSuite() {
+	tearDownDatabase(ts)
 }
 
-func setupDatabase(its *TestDBSuite) {
-	its.T().Log("setting up database")
+func setupDatabase(ts *TestDBSuite) {
+	ts.T().Log("setting up database")
 
-	_, err := its.db.DBX.Exec(fmt.Sprintf(`DROP DATABASE IF EXISTS %s; CREATE DATABASE %s`, dbName, dbName))
+	_, err := ts.db.DBX.Exec(fmt.Sprintf(`DROP DATABASE IF EXISTS %s; CREATE DATABASE %s`, dbName, dbName))
 	if err != nil {
-		its.FailNowf("unable to create database", err.Error())
+		ts.FailNowf("unable to create database", err.Error())
 	}
-	its.T().Logf("База [%s] создана\n", dbName)
+	ts.T().Logf("База [%s] создана\n", dbName)
 
 	query := fmt.Sprintf(`CREATE TABLE %s (
 		last_name varchar(50) PRIMARY KEY,
@@ -77,30 +76,30 @@ func setupDatabase(its *TestDBSuite) {
 		created_at datetime NOT NULL DEFAULT current_timestamp
 	)`, tableName)
 
-	_, err = its.db.DBX.Exec(query)
+	_, err = ts.db.DBX.Exec(query)
 	if err != nil {
-		its.FailNowf("unable to create table", err.Error())
+		ts.FailNowf("unable to create table", err.Error())
 	}
-	its.T().Logf("Таблица [%s] создана\n", tableName)
+	ts.T().Logf("Таблица [%s] создана\n", tableName)
 
 }
 
-func tearDownDatabase(its *TestDBSuite) {
-	its.T().Log("tearing down database")
+func tearDownDatabase(ts *TestDBSuite) {
+	ts.T().Log("tearing down database")
 
-	_, err := its.db.DBX.Exec(fmt.Sprintf(`DROP TABLE %s`, tableName))
+	_, err := ts.db.DBX.Exec(fmt.Sprintf(`DROP TABLE %s`, tableName))
 	if err != nil {
-		its.FailNowf("unable to drop table", err.Error())
+		ts.FailNowf("unable to drop table", err.Error())
 	}
 
-	_, err = its.db.DBX.Exec(fmt.Sprintf(`DROP DATABASE %s`, dbName))
+	_, err = ts.db.DBX.Exec(fmt.Sprintf(`DROP DATABASE %s`, dbName))
 	if err != nil {
-		its.FailNowf("unable to drop database", err.Error())
+		ts.FailNowf("unable to drop database", err.Error())
 	}
 
-	err = its.db.Close()
+	err = ts.db.Close()
 	if err != nil {
-		its.FailNowf("unable to close database", err.Error())
+		ts.FailNowf("unable to close database", err.Error())
 	}
 }
 
@@ -196,14 +195,16 @@ func (ts *TestDBSuite) TestData1() {
 }
 
 func (ts *TestDBSuite) TestDataSelect() {
+	t := ts.T()
 
 	// batch insert with maps
 	dtIns := []map[string]interface{}{
 		{"LastName": "Сидоров", "Email": "sidr@example.com", "Birthdate": time.Date(2000, 2, 21, 0, 0, 0, 0, time.UTC)},
 		{"LastName": "Кузнецов", "Email": "kuz@gmail.com", "Birthdate": nil},
-		{"LastName": "Петров", "Email": "petr@mail.ru", "Birthdate": nil},
+		{"LastName": "Петров", "Email": "peter@example.com", "Birthdate": nil},
 	}
-	//ts.T().Logf("данные для вставки: %+v", dtIns)
+
+	t.Logf("данные для вставки: %+v", dtIns)
 	query := fmt.Sprintf(`INSERT INTO %s (last_name, Email, Birthdate) VALUES (:LastName, :Email, :Birthdate)`, tableName)
 	_, err := ts.db.NamedExec(query, dtIns)
 	ts.NoError(err)

@@ -3,16 +3,16 @@ package repository
 import (
 	"context"
 	"kvart-info/internal/model"
-	"kvart-info/pkg/mssql"
+	"kvart-info/pkg/dbwrap"
 )
 
 // Repository ...
 type Repository struct {
-	*mssql.MSSQL
+	*dbwrap.DBSQL
 }
 
 // New ...
-func New(ms *mssql.MSSQL) *Repository {
+func New(ms *dbwrap.DBSQL) *Repository {
 	return &Repository{ms}
 }
 

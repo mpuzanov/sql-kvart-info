@@ -1,4 +1,4 @@
-package mssql
+package dbwrap
 
 import (
 	"testing"
@@ -7,6 +7,7 @@ import (
 )
 
 func Test_getDatabaseUrl(t *testing.T) {
+	driverName := "sqlserver"
 	var tests = []struct {
 		in   Config
 		want string
@@ -18,6 +19,6 @@ func Test_getDatabaseUrl(t *testing.T) {
 			"sqlserver://user:password@host:1433?app+name=APP&database=database_name"},
 	}
 	for _, test := range tests {
-		assert.Equal(t, test.want, test.in.getDatabaseURL())
+		assert.Equal(t, test.want, test.in.getDatabaseURL(driverName))
 	}
 }

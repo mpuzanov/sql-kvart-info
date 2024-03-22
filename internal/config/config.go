@@ -3,9 +3,9 @@ package config
 import (
 	"errors"
 	"fmt"
+	"kvart-info/pkg/dbwrap"
 	"kvart-info/pkg/email"
 	"kvart-info/pkg/logging"
-	"kvart-info/pkg/mssql"
 	"os"
 	"path/filepath"
 
@@ -14,9 +14,9 @@ import (
 
 // Config ...
 type Config struct {
-	Env  string       `yaml:"env"`
-	DB   mssql.Config `yaml:"db"`
-	Mail email.Config `yaml:"mail"`
+	Env  string        `yaml:"env"`
+	DB   dbwrap.Config `yaml:"db"`
+	Mail email.Config  `yaml:"mail"`
 	// ToSendEmail адрес (куда отправлять письмо)
 	ToSendEmail string `yaml:"to_send_email" env:"TO_SEND_EMAIL"`
 	// IsSendEmail признак для отправки по почте

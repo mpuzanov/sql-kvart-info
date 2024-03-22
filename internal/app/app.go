@@ -7,8 +7,8 @@ import (
 	"kvart-info/internal/controller/notify"
 	"kvart-info/internal/repository"
 	"kvart-info/internal/service"
+	"kvart-info/pkg/dbwrap"
 	"kvart-info/pkg/logging"
-	"kvart-info/pkg/mssql"
 	"os"
 )
 
@@ -18,13 +18,13 @@ func Run(cfg *config.Config) error {
 	logger := logging.NewEnv(cfg.Env)
 	logger.Debug("debug", "cfg", cfg)
 
-	mssql, err := mssql.New(&cfg.DB)
+	dbsql, err := dbwrap.New(&cfg.DB)
 	if err != nil {
-		return fmt.Errorf("mssql.New : %w", err)
+		return fmt.Errorf("dbwrap.New : %w", err)
 	}
-	defer mssql.Close()
+	defer dbsql.Close()
 
-	repoInfo := repository.New(mssql)
+	repoInfo := repository.New(dbsql)
 
 	infoUseCase := service.New(repoInfo)
 

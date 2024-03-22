@@ -1,4 +1,4 @@
-package mssql
+package dbwrap
 
 import (
 	"fmt"
@@ -38,18 +38,24 @@ func (c *Config) WithDB(dbname string) *Config {
 }
 
 // getDatabaseURL "sqlserver://user:password@host:port?database=database_name"
-func (d Config) getDatabaseURL() string {
+//
+// driver sqlserver || postgres
+func (c *Config) getDatabaseURL(driverName string) string {
 	v := url.Values{}
-	v.Set("database", d.Database)
-	if d.APPName != "" {
-		v.Add("app name", d.APPName)
+	v.Set("database", c.Database)
+	if c.APPName != "" {
+		v.Add("app name", c.APPName)
 	}
 
 	var u = url.URL{
-		Scheme:   "sqlserver",
-		User:     url.UserPassword(d.User, d.Password),
-		Host:     fmt.Sprintf("%s:%d", d.Host, d.Port),
+		Scheme:   driverName,
+		User:     url.UserPassword(c.User, c.Password),
+		Host:     fmt.Sprintf("%s:%d", c.Host, c.Port),
 		RawQuery: v.Encode(),
 	}
 	return u.String()
+}
+
+func (c *Config) String() string {
+	return ""
 }

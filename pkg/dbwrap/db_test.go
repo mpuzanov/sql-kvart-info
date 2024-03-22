@@ -1,4 +1,4 @@
-package mssql
+package dbwrap
 
 import (
 	"testing"
@@ -14,7 +14,7 @@ func TestNew(t *testing.T) {
 
 	config.WithPassword("12345")
 	_, err = New(config)
-	assert.ErrorContains(t, err, "sqlx.Ping")
+	assert.ErrorContains(t, err, "sqlx.Connect")
 
 	config.WithPassword("123")
 	db, err := New(config)

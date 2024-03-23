@@ -1,11 +1,11 @@
-package postgres
+package sqlite
 
 /*
-go get github.com/lib/pq
+go get github.com/mattn/go-sqlite3
 
 запуск тестов
 go test -v -cover ./pkg/dbwrap/...
-go test -v -cover ./pkg/dbwrap/postgres
+go test -v -cover ./pkg/dbwrap/sqlite
 
 go test -race -covermode=atomic -coverprofile=coverage.out ./pkg/dbwrap
 go tool cover -html=coverage.out -o coverage.html
@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -42,8 +42,8 @@ type TestDBSuite struct {
 }
 
 var (
-	dbName    = "go_db_test"
-	tableName = fmt.Sprintf("%s.public.people", dbName)
+	dbName    = ""
+	tableName = "people"
 )
 
 func TestTestDBSuite(t *testing.T) {
@@ -52,7 +52,8 @@ func TestTestDBSuite(t *testing.T) {
 
 func (ts *TestDBSuite) SetupSuite() {
 
-	config := dbwrap.NewConfig("postgres").WithPassword("123")
+	config := dbwrap.NewConfig("sqlite3")
+	//ts.T().Log(config, config.GetDatabaseURL())
 	db, err := dbwrap.New(config)
 	if err != nil {
 		ts.T().Fatalf("cannot connect db: %v", err)
@@ -69,18 +70,6 @@ func (ts *TestDBSuite) TearDownSuite() {
 func setupDatabase(ts *TestDBSuite) {
 	ts.T().Log("setting up database")
 	//==================================================================
-	query := fmt.Sprintf(`DROP DATABASE IF EXISTS %s;`, dbName)
-	_, err := ts.db.DBX.Exec(query)
-	if err != nil {
-		ts.FailNowf("unable to drop database", "[%s] %s", query, err.Error())
-	}
-	query = fmt.Sprintf(`CREATE DATABASE %s;`, dbName)
-	_, err = ts.db.DBX.Exec(query)
-	if err != nil {
-		ts.FailNowf("unable to create database", "[%s] %s", query, err.Error())
-	}
-	ts.T().Logf("База [%s] создана\n", dbName)
-	//==================================================================
 	db, err := dbwrap.New(ts.cfg.WithDB(dbName))
 	if err != nil {
 		ts.FailNowf("cannot connect db:", "[%s] %s", dbName, err.Error())
@@ -88,13 +77,13 @@ func setupDatabase(ts *TestDBSuite) {
 	ts.db = db
 	ts.T().Logf("connected database [%s]", dbName)
 	//==================================================================
-	query = fmt.Sprintf(`CREATE TABLE %s (
+	query := fmt.Sprintf(`CREATE TABLE %s (
 		last_name varchar(50) PRIMARY KEY,
 		birthdate DATE,
-		salary decimal(15,2),
+		salary NUMERIC,
 		is_owner_flat BOOLEAN,
-		email varchar(100) UNIQUE,
-		created_at timestamp NOT NULL DEFAULT now()
+		email varchar(100),
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);`, tableName)
 
 	_, err = ts.db.DBX.Exec(query)
@@ -119,19 +108,6 @@ func tearDownDatabase(ts *TestDBSuite) {
 	if err != nil {
 		ts.FailNowf("unable to close database", err.Error())
 	}
-
-	db, err := dbwrap.New(ts.cfg.WithDB("postgres"))
-	if err != nil {
-		t.Fatalf("cannot connect db: %v", err)
-	}
-	ts.db = db
-	t.Log("connected database:", "postgres")
-
-	_, err = ts.db.DBX.Exec(fmt.Sprintf(`DROP DATABASE IF EXISTS %s`, dbName))
-	if err != nil {
-		ts.FailNowf("unable to drop database", err.Error())
-	}
-	t.Log("droped database:", dbName)
 }
 
 func (ts *TestDBSuite) TestData1() {

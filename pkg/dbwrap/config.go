@@ -80,7 +80,7 @@ func (c *Config) GetDatabaseURL() string {
 		return ":memory:"
 
 	case "mysql":
-		return fmt.Sprintf("%s:%s@tcp(%s)/%s", c.User, c.Password, c.Host, c.Database)
+		return fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4,utf8&parseTime=true&loc=Local", c.User, c.Password, c.Host, c.Database)
 
 	default:
 		v := url.Values{}
@@ -88,10 +88,10 @@ func (c *Config) GetDatabaseURL() string {
 		if c.APPName != "" {
 			v.Add("app name", c.APPName)
 		}
+
 		if c.DriverName == "postgres" {
 			v.Set("sslmode", "disable")
 		}
-
 		var u = url.URL{
 			Scheme:   c.DriverName,
 			User:     url.UserPassword(c.User, c.Password),

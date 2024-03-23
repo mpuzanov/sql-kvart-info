@@ -24,7 +24,7 @@ func TestGetDatabaseUrl(t *testing.T) {
 }
 
 func TestConfigString(t *testing.T) {
-	expected := "DriverName=sqlserver, Host=localhost, Port=1433, User=sa, Password=<REMOVED>, Database=master, TimeoutQuery=300"
+	expected := "DriverName=sqlserver, Host=127.0.0.1, Port=1433, User=sa, Password=<REMOVED>, Database=master, TimeoutQuery=300"
 	got := NewConfig("sqlserver").String()
 	assert.Equal(t, expected, got)
 }

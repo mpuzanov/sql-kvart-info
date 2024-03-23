@@ -2,7 +2,7 @@ package mssql
 
 /*
 запуск тестов
-go test -v -cover ./pkg/dbwrap
+go test -v -cover ./pkg/dbwrap/...
 go test -v -cover ./pkg/dbwrap/mssql
 
 go test -race -covermode=atomic -coverprofile=coverage.out ./pkg/dbwrap
@@ -159,8 +159,8 @@ func (ts *TestDBSuite) TestData1() {
 		person := Person{}
 		err = ts.db.NamedGet(&person, query, map[string]interface{}{"Name": "Иванов"})
 		ts.NoError(err)
-		ts.Equal("ivan@example.com", person.Email)
 		//ts.T().Logf("person: %+v", person)
+		ts.Equal("ivan@example.com", person.Email)
 	})
 
 	//===========================================================
@@ -233,6 +233,7 @@ func (ts *TestDBSuite) TestDataSelect() {
 	ts.NoError(err)
 	ts.Len(resultMap2, 1)
 	//ts.T().Logf("получим в map: %+v", resultMap2)
+	ts.Equal("Кузнецов", resultMap2[0]["last_name"])
 }
 
 func (ts *TestDBSuite) TestEmptyData() {

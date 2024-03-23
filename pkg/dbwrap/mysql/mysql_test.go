@@ -1,11 +1,11 @@
-package postgres
+package mysql
 
 /*
-go get github.com/lib/pq
+go get -u github.com/go-sql-driver/mysql
 
 запуск тестов
 go test -v -cover ./pkg/dbwrap/...
-go test -v -cover ./pkg/dbwrap/postgres
+go test -v -cover ./pkg/dbwrap/mysql
 
 go test -race -covermode=atomic -coverprofile=coverage.out ./pkg/dbwrap
 go tool cover -html=coverage.out -o coverage.html
@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -43,7 +43,7 @@ type TestDBSuite struct {
 
 var (
 	dbName    = "go_db_test"
-	tableName = fmt.Sprintf("%s.public.people", dbName)
+	tableName = fmt.Sprintf("%s.people", dbName)
 )
 
 func TestTestDBSuite(t *testing.T) {
@@ -52,7 +52,8 @@ func TestTestDBSuite(t *testing.T) {
 
 func (ts *TestDBSuite) SetupSuite() {
 
-	config := dbwrap.NewConfig("postgres").WithPassword("123")
+	config := dbwrap.NewConfig("mysql").WithPassword("123")
+	ts.T().Log(config.GetDatabaseURL())
 	db, err := dbwrap.New(config)
 	if err != nil {
 		ts.T().Fatalf("cannot connect db: %v", err)
@@ -93,8 +94,8 @@ func setupDatabase(ts *TestDBSuite) {
 		birthdate DATE,
 		salary decimal(15,2),
 		is_owner_flat BOOLEAN,
-		email varchar(100) UNIQUE,
-		created_at timestamp NOT NULL DEFAULT now()
+		email varchar(100),
+		created_at TIMESTAMP NOT NULL DEFAULT now()
 	);`, tableName)
 
 	_, err = ts.db.DBX.Exec(query)
@@ -120,12 +121,12 @@ func tearDownDatabase(ts *TestDBSuite) {
 		ts.FailNowf("unable to close database", err.Error())
 	}
 
-	db, err := dbwrap.New(ts.cfg.WithDB("postgres"))
+	db, err := dbwrap.New(ts.cfg.WithDB("mysql"))
 	if err != nil {
 		t.Fatalf("cannot connect db: %v", err)
 	}
 	ts.db = db
-	t.Log("connected database:", "postgres")
+	t.Log("connected database:", "mysql")
 
 	_, err = ts.db.DBX.Exec(fmt.Sprintf(`DROP DATABASE IF EXISTS %s`, dbName))
 	if err != nil {
@@ -152,7 +153,7 @@ func (ts *TestDBSuite) TestData1() {
 
 	//===========================================================
 	ts.Suite.Run("select Test", func() {
-		query := fmt.Sprintf(`select * from %s`, tableName)
+		query := fmt.Sprintf(`select last_name, email from %s`, tableName)
 		var people []Person
 		err := ts.db.Select(&people, query)
 		ts.NoError(err)
@@ -162,13 +163,13 @@ func (ts *TestDBSuite) TestData1() {
 	})
 	// ===========================================================
 	ts.Suite.Run("select Test where", func() {
-		query := fmt.Sprintf(`select last_name, email, created_at from %s where last_name=:Name`, tableName)
+		query := fmt.Sprintf(`select * from %s where last_name=:Name`, tableName)
 		var people2 []Person
 		err := ts.db.NamedSelect(&people2, query, map[string]interface{}{"Name": "Иванов"})
 		ts.NoError(err)
 		ts.Len(people2, 1)
-		ts.Equal("ivan@example.com", people2[0].Email)
 		//ts.T().Logf("%+v", people2)
+		ts.Equal("ivan@example.com", people2[0].Email)
 	})
 
 	//===========================================================
@@ -186,17 +187,18 @@ func (ts *TestDBSuite) TestData1() {
 		person := Person{}
 		err := ts.db.NamedGet(&person, query, map[string]interface{}{"Name": "Иванов"})
 		ts.NoError(err)
-		ts.Equal("ivan@example.com", person.Email)
 		//ts.T().Logf("person: %+v", person)
+		ts.Equal("ivan@example.com", person.Email)
 	})
 
 	//===========================================================
 	ts.Suite.Run("Get Map", func() {
+		//query := fmt.Sprintf(`select * from %s where last_name=:Name`, tableName)
 		query := fmt.Sprintf(`select last_name, email, created_at from %s where last_name=:Name`, tableName)
 		person, err := ts.db.NamedGetMap(query, map[string]interface{}{"Name": "Иванов"})
 		ts.NoError(err)
-		ts.Equal("ivan@example.com", person["email"])
 		//ts.T().Logf("person: %+v", person)
+		ts.Equal("ivan@example.com", person["email"])
 	})
 
 	//===========================================================
@@ -243,8 +245,8 @@ func (ts *TestDBSuite) TestDataSelect() {
 	query = fmt.Sprintf(`select * from %s`, tableName)
 	resultMap, err := ts.db.SelectMaps(query)
 	ts.NoError(err)
-	ts.Len(resultMap, 3)
 	//ts.T().Logf("получим в map: %+v", resultMap)
+	ts.Len(resultMap, 3)
 
 	var resultSlice []Person
 	err = ts.db.Select(&resultSlice, query)

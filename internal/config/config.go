@@ -3,7 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
-	"kvart-info/pkg/dbwrap"
+	"github.com/mpuzanov/dbwrap"
 	"kvart-info/pkg/email"
 	"kvart-info/pkg/logging"
 	"os"

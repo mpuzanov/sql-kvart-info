@@ -3,7 +3,8 @@ package repository
 import (
 	"context"
 	"kvart-info/internal/model"
-	"kvart-info/pkg/dbwrap"
+
+	"github.com/mpuzanov/dbwrap"
 )
 
 // Repository ...

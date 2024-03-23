@@ -7,9 +7,10 @@ import (
 	"kvart-info/internal/controller/notify"
 	"kvart-info/internal/repository"
 	"kvart-info/internal/service"
-	"kvart-info/pkg/dbwrap"
 	"kvart-info/pkg/logging"
 	"os"
+
+	"github.com/mpuzanov/dbwrap"
 )
 
 // Run ...

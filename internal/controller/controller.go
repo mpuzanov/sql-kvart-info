@@ -4,7 +4,7 @@ import (
 	"context"
 	"kvart-info/internal/config"
 	"kvart-info/internal/model"
-	"kvart-info/pkg/logging"
+	"kvart-info/pkg/wslog"
 )
 
 // useсase ...
@@ -17,11 +17,11 @@ type usecase interface {
 // Controller ...
 type Controller struct {
 	cfg *config.Config
-	log *logging.Logger
+	log *wslog.Logger
 	uc  usecase
 }
 
 // New ...
-func New(cfg *config.Config, log *logging.Logger, uc usecase) *Controller {
+func New(cfg *config.Config, log *wslog.Logger, uc usecase) *Controller {
 	return &Controller{cfg: cfg, log: log, uc: uc}
 }

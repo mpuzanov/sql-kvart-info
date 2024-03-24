@@ -1,4 +1,4 @@
-package logging
+package wslog
 
 import (
 	"context"
@@ -51,8 +51,8 @@ type LoggerOption func(options *options)
 var (
 	// SetDefault ...
 	SetDefault = slog.SetDefault
-	// StringAttr алиасы типов
-	StringAttr = slog.String
+	// StrAttr алиасы типов
+	StrAttr = slog.String
 	// BoolAttr ...
 	BoolAttr = slog.Bool
 	// Float64Attr ...
@@ -84,7 +84,7 @@ var replaceAttr = func(groups []string, a slog.Attr) slog.Attr {
 		t, ok := a.Value.Any().(time.Time)
 		if ok {
 			a.Value = slog.StringValue(t.Format("2006-01-02 15:04:05.000"))
-			//return StringAttr(a.Key, t.Format("2006-01-02 15:04:05.000"))
+			//return StrAttr(a.Key, t.Format("2006-01-02 15:04:05.000"))
 		}
 	}
 	// Remove the directory from the source's filename.

@@ -3,11 +3,12 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/mpuzanov/dbwrap"
 	"kvart-info/pkg/email"
-	"kvart-info/pkg/logging"
+	"kvart-info/pkg/wslog"
 	"os"
 	"path/filepath"
+
+	"github.com/mpuzanov/dbwrap"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -46,29 +47,29 @@ func NewConfig(fileConf string) (*Config, error) {
 }
 
 // LogValue для удобного логирования структуры
-func (cfg Config) LogValue() logging.Value {
-	return logging.GroupValue(
-		logging.StringAttr("Env", cfg.Env),
-		logging.StringAttr("ToSendEmail", cfg.ToSendEmail),
-		logging.BoolAttr("IsSendEmail", cfg.IsSendEmail),
+func (cfg Config) LogValue() wslog.Value {
+	return wslog.GroupValue(
+		wslog.StrAttr("Env", cfg.Env),
+		wslog.StrAttr("ToSendEmail", cfg.ToSendEmail),
+		wslog.BoolAttr("IsSendEmail", cfg.IsSendEmail),
 
-		logging.Group(
+		wslog.Group(
 			"db",
-			logging.StringAttr("host", cfg.DB.Host),
-			logging.IntAttr("port", cfg.DB.Port),
-			logging.StringAttr("user", cfg.DB.User),
-			logging.StringAttr("password", "<REMOVED>"),
-			logging.StringAttr("database", cfg.DB.Database),
+			wslog.StrAttr("host", cfg.DB.Host),
+			wslog.IntAttr("port", cfg.DB.Port),
+			wslog.StrAttr("user", cfg.DB.User),
+			wslog.StrAttr("password", "<REMOVED>"),
+			wslog.StrAttr("database", cfg.DB.Database),
 		),
 
-		logging.Group(
+		wslog.Group(
 			"mail",
-			logging.StringAttr("server", cfg.Mail.Server),
-			logging.IntAttr("port", cfg.Mail.Port),
-			logging.StringAttr("username", cfg.Mail.UserName),
-			logging.StringAttr("password", "<REMOVED>"),
-			logging.BoolAttr("use_tls", cfg.Mail.UseTLS),
-			logging.BoolAttr("use_ssl", cfg.Mail.UseSSL),
+			wslog.StrAttr("server", cfg.Mail.Server),
+			wslog.IntAttr("port", cfg.Mail.Port),
+			wslog.StrAttr("username", cfg.Mail.UserName),
+			wslog.StrAttr("password", "<REMOVED>"),
+			wslog.BoolAttr("use_tls", cfg.Mail.UseTLS),
+			wslog.BoolAttr("use_ssl", cfg.Mail.UseSSL),
 		),
 	)
 }

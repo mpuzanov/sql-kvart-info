@@ -7,7 +7,7 @@ import (
 	"kvart-info/internal/controller/notify"
 	"kvart-info/internal/repository"
 	"kvart-info/internal/service"
-	"kvart-info/pkg/wslog"
+	"github.com/mpuzanov/wslog"
 	"os"
 
 	"github.com/mpuzanov/dbwrap"
@@ -17,7 +17,7 @@ import (
 func Run(cfg *config.Config) error {
 
 	logger := wslog.NewEnv(cfg.Env)
-	logger.Debug("debug", "cfg", cfg)
+	logger.Debug("debug", wslog.AnyAttr("cfg", cfg))
 
 	dbCon, err := dbwrap.NewConnect(&cfg.DB)
 	if err != nil {

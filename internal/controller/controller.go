@@ -4,7 +4,8 @@ import (
 	"context"
 	"kvart-info/internal/config"
 	"kvart-info/internal/model"
-	"kvart-info/pkg/wslog"
+
+	"github.com/mpuzanov/wslog"
 )
 
 // useсase ...

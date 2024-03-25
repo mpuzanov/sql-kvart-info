@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"kvart-info/pkg/email"
-	"kvart-info/pkg/wslog"
+	"github.com/mpuzanov/wslog"
 	"os"
 	"path/filepath"
 

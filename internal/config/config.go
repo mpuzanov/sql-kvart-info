@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"kvart-info/pkg/email"
-	"github.com/mpuzanov/wslog"
 	"os"
 	"path/filepath"
+
+	"github.com/mpuzanov/wslog"
 
 	"github.com/mpuzanov/dbwrap"
 
@@ -49,27 +50,27 @@ func NewConfig(fileConf string) (*Config, error) {
 // LogValue для удобного логирования структуры
 func (cfg Config) LogValue() wslog.Value {
 	return wslog.GroupValue(
-		wslog.StrAttr("Env", cfg.Env),
-		wslog.StrAttr("ToSendEmail", cfg.ToSendEmail),
-		wslog.BoolAttr("IsSendEmail", cfg.IsSendEmail),
+		wslog.String("Env", cfg.Env),
+		wslog.String("ToSendEmail", cfg.ToSendEmail),
+		wslog.Bool("IsSendEmail", cfg.IsSendEmail),
 
 		wslog.Group(
 			"db",
-			wslog.StrAttr("host", cfg.DB.Host),
-			wslog.IntAttr("port", cfg.DB.Port),
-			wslog.StrAttr("user", cfg.DB.User),
-			wslog.StrAttr("password", "<REMOVED>"),
-			wslog.StrAttr("database", cfg.DB.Database),
+			wslog.String("host", cfg.DB.Host),
+			wslog.Int("port", cfg.DB.Port),
+			wslog.String("user", cfg.DB.User),
+			wslog.String("password", "<REMOVED>"),
+			wslog.String("database", cfg.DB.Database),
 		),
 
 		wslog.Group(
 			"mail",
-			wslog.StrAttr("server", cfg.Mail.Server),
-			wslog.IntAttr("port", cfg.Mail.Port),
-			wslog.StrAttr("username", cfg.Mail.UserName),
-			wslog.StrAttr("password", "<REMOVED>"),
-			wslog.BoolAttr("use_tls", cfg.Mail.UseTLS),
-			wslog.BoolAttr("use_ssl", cfg.Mail.UseSSL),
+			wslog.String("server", cfg.Mail.Server),
+			wslog.Int("port", cfg.Mail.Port),
+			wslog.String("username", cfg.Mail.UserName),
+			wslog.String("password", "<REMOVED>"),
+			wslog.Bool("use_tls", cfg.Mail.UseTLS),
+			wslog.Bool("use_ssl", cfg.Mail.UseSSL),
 		),
 	)
 }

@@ -17,12 +17,12 @@ func New(ms *dbwrap.DBSQL) *Repository {
 	return &Repository{ms}
 }
 
-// Get получаем сводную информацию из БД
-func (r *Repository) GetByTip(ctx context.Context, tip_id any) ([]model.SummaryInfo, error) {
+// GetByTip получаем сводную информацию из БД
+func (r *Repository) GetByTip(ctx context.Context, tipID any) ([]model.SummaryInfo, error) {
 
 	var data []model.SummaryInfo
 	p := map[string]interface{}{
-		"tip_id": tip_id,
+		"tip_id": tipID,
 	}
 	err := r.NamedSelect(&data, QuerySummaryInfo, p)
 	if err != nil {

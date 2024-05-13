@@ -7,7 +7,7 @@ import (
 
 //go:generate mockery --name repository
 type repository interface {
-	GetByTip(ctx context.Context, tip_id any) ([]model.SummaryInfo, error)
+	GetByTip(ctx context.Context, tipID any) ([]model.SummaryInfo, error)
 }
 
 // Usecase ...

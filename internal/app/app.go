@@ -49,6 +49,6 @@ func Run(cfg *config.Config) error {
 
 	// выдаём на экран
 	notify.NewCli(bodyMessage, os.Stdout).Send()
-	
+
 	return nil
 }

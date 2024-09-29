@@ -13,3 +13,4 @@
 
 [Генератор моков Mockery](https://vektra.github.io/mockery/latest/)
 
+Утилита для запуска тестов - gotestsum [github](https://github.com/gotestyourself/gotestsum)

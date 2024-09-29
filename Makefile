@@ -7,7 +7,7 @@ SOURCE=./cmd/${APP}
 GOBASE=$(shell pwd)
 RELEASE_DIR=$(GOBASE)/bin
 NOW := $(shell date "+%Y-%m-%d %H-%M-%S")
-Version=0.0.3
+Version=0.0.4
 
 GO_SRC_DIRS := $(shell \
 	find . -name "*.go" -not -path "./vendor/*" | \

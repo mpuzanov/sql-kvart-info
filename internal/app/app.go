@@ -2,13 +2,14 @@ package app
 
 import (
 	"fmt"
-	"github.com/mpuzanov/wslog"
 	"kvart-info/internal/config"
 	"kvart-info/internal/controller"
 	"kvart-info/internal/controller/notify"
 	"kvart-info/internal/repository"
 	"kvart-info/internal/service"
 	"os"
+
+	"github.com/mpuzanov/wslog"
 
 	"github.com/mpuzanov/dbwrap"
 )
@@ -37,13 +38,8 @@ func Run(cfg *config.Config) error {
 
 	if cfg.IsSendEmail && cfg.ToSendEmail != "" {
 
-		objNotify := notify.NotifyEmail{
-			Cfg:         cfg.Mail,
-			BodyMessage: bodyMessage,
-			Title:       title,
-			ToSendEmail: cfg.ToSendEmail,
-		}
-		emailStatus, err := notify.New(objNotify).Send()
+		objNotify := notify.NewEmail(cfg.Mail, bodyMessage, title, cfg.ToSendEmail)
+		emailStatus, err := objNotify.Send()
 		if err != nil {
 			return fmt.Errorf("NotifyEmail : %w", err)
 		}
@@ -52,8 +48,7 @@ func Run(cfg *config.Config) error {
 	}
 
 	// выдаём на экран
-	objNotify := notify.NotifyCli{BodyMessage: bodyMessage, Writer: os.Stdout}
-	notify.New(objNotify).Send()
-
+	notify.NewCli(bodyMessage, os.Stdout).Send()
+	
 	return nil
 }

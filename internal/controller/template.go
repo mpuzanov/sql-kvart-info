@@ -151,5 +151,5 @@ var bodyTemplateMap = `
 `
 
 const tmplText = "\n" +
-	"Фин.период\tТип фонда\tДомов\tЛицевых\tПомещений\tПлощадь\n" +
-	"{{range .}}{{.FinPeriod}}\t{{(getValidName .TipName)}}\t{{.CountBuild}}\t{{.CountLic}}\t{{.Flat}}\t{{.TotalSq}}\n{{end}}"
+	"Фин.период\tТип фонда\tДомов\tЛицевых\tПомещений\tПлощадь\tРазница лицевых\n" +
+	"{{range .}}{{.FinPeriod}}\t{{(getValidName .TipName)}}\t{{.CountBuild}}\t{{.CountLic}}\t{{.Flat}}\t{{.TotalSq}}\t{{.KolOccDif}}\n{{end}}"

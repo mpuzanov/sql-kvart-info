@@ -19,6 +19,7 @@ config*.yml
 
 *.code-workspace
 go.sum
+coverage.html
 
 # запускаемый файл
 kvart-info

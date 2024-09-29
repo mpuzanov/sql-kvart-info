@@ -24,14 +24,16 @@ run: build ## Run program
 
 test: ## go test with race detector and code covarage
 	$(call print-target)
-	go test -v -cover ./internal/...
+#	go test -v -cover ./internal/...
+	gotestsum --format dots -- ./internal/... 
 .PHONY: test
 
 test-cover: ## go test with race detector and code covarage
 	$(call print-target)
-	go test -race -covermode=atomic -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
-	@rm coverage.out
+	go test -race -covermode=atomic -coverpkg=./... -coverprofile=c.out ./...
+	go tool cover -func=c.out
+#	go tool cover -html=c.out -o coverage.html
+	@rm c.out
 	
 lint:  ## Lint the source files
 	$(call print-target)

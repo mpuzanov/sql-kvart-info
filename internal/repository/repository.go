@@ -40,9 +40,9 @@ SELECT max(ot.fin_id) AS fin_id
      , sum(t_cur.kol_occ) AS count_occ
      , sum(t_cur.kol_flat) AS flat
      , sum(t_cur.total_sq) AS total_sq
-     , sum(t_cur.kol_occ - t_prev.kol_occ)  as kol_occ_dif 
-     , sum(t_cur.kol_flat - t_prev.kol_flat) as kol_flat_dif
-     , sum(t_cur.total_sq - t_prev.total_sq) as total_sq_dif
+     , sum(t_cur.kol_occ - COALESCE(t_prev.kol_occ, 0))  as kol_occ_dif 
+     , sum(t_cur.kol_flat - COALESCE(t_prev.kol_flat, 0)) as kol_flat_dif
+     , sum(t_cur.total_sq - COALESCE(t_prev.total_sq, 0)) as total_sq_dif
 FROM dbo.Occupation_Types ot
 CROSS APPLY  (
          SELECT o.fin_id
@@ -62,7 +62,7 @@ CROSS APPLY  (
            AND (o.PaidAll<>0 OR o.PaymAccount<>0)
          GROUP BY o.fin_id, o.tip_id
      ) AS t_cur
-CROSS APPLY  (
+OUTER APPLY  (
          SELECT o.fin_id
               , MAX(o.start_date) AS start_date
               , o.tip_id
@@ -81,7 +81,7 @@ CROSS APPLY  (
          GROUP BY o.fin_id, o.tip_id
      ) AS t_prev
 WHERE ot.payms_value=1 
-	and ot.raschet_no=0
-     and (ot.id=:tip_id OR :tip_id is null)
+	AND ot.raschet_no=0
+     AND (ot.id=:tip_id OR :tip_id is null)
 GROUP BY ot.name WITH ROLLUP
 `

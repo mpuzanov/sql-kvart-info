@@ -7,6 +7,7 @@ import (
 )
 
 func Test_getValidFileName(t *testing.T) {
+	t.Parallel()
 	var tests = []struct {
 		in   string
 		want string

@@ -12,6 +12,7 @@ import (
 )
 
 func TestUsecase_GetSummaryInfo(t *testing.T) {
+	t.Parallel()
 
 	tests := []struct {
 		name   string

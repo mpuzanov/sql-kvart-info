@@ -21,7 +21,7 @@ func New(ms *dbwrap.DBSQL) *Repository {
 func (r *Repository) GetByTip(ctx context.Context, tipID any) ([]model.SummaryInfo, error) {
 
 	var data []model.SummaryInfo
-	p := map[string]interface{}{
+	p := map[string]any{
 		"tip_id": tipID,
 	}
 	err := r.NamedSelect(&data, QuerySummaryInfo, p)

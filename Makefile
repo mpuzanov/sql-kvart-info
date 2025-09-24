@@ -39,7 +39,8 @@ lint:  ## Lint the source files
 	$(call print-target)
 	@gofmt -s -w ${GO_SRC_DIRS}
 	@go vet ${GO_SRC_DIRS}
-	@golint ${GO_SRC_DIRS}
+#	@golint ${GO_SRC_DIRS}	
+	@golangci-lint run ${GO_SRC_DIRS}
 
 linter-golangci: ### check by golangci linter
 	$(call print-target)

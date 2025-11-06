@@ -4,10 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"kvart-info/pkg/email"
+	"log/slog"
 	"os"
 	"path/filepath"
-
-	"github.com/mpuzanov/wslog"
 
 	"github.com/mpuzanov/dbwrap"
 
@@ -48,29 +47,29 @@ func NewConfig(fileConf string) (*Config, error) {
 }
 
 // LogValue для удобного логирования структуры
-func (cfg Config) LogValue() wslog.Value {
-	return wslog.GroupValue(
-		wslog.String("Env", cfg.Env),
-		wslog.String("ToSendEmail", cfg.ToSendEmail),
-		wslog.Bool("IsSendEmail", cfg.IsSendEmail),
+func (cfg Config) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("Env", cfg.Env),
+		slog.String("ToSendEmail", cfg.ToSendEmail),
+		slog.Bool("IsSendEmail", cfg.IsSendEmail),
 
-		wslog.Group(
+		slog.Group(
 			"db",
-			wslog.String("host", cfg.DB.Host),
-			wslog.Int("port", cfg.DB.Port),
-			wslog.String("user", cfg.DB.User),
-			wslog.String("password", "<REMOVED>"),
-			wslog.String("database", cfg.DB.Database),
+			slog.String("host", cfg.DB.Host),
+			slog.Int("port", cfg.DB.Port),
+			slog.String("user", cfg.DB.User),
+			slog.String("password", "<REMOVED>"),
+			slog.String("database", cfg.DB.Database),
 		),
 
-		wslog.Group(
+		slog.Group(
 			"mail",
-			wslog.String("server", cfg.Mail.Server),
-			wslog.Int("port", cfg.Mail.Port),
-			wslog.String("username", cfg.Mail.UserName),
-			wslog.String("password", "<REMOVED>"),
-			wslog.Bool("use_tls", cfg.Mail.UseTLS),
-			wslog.Bool("use_ssl", cfg.Mail.UseSSL),
+			slog.String("server", cfg.Mail.Server),
+			slog.Int("port", cfg.Mail.Port),
+			slog.String("username", cfg.Mail.UserName),
+			slog.String("password", "<REMOVED>"),
+			slog.Bool("use_tls", cfg.Mail.UseTLS),
+			slog.Bool("use_ssl", cfg.Mail.UseSSL),
 		),
 	)
 }

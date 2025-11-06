@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"kvart-info/internal/config"
 	"kvart-info/internal/controller"
@@ -15,8 +16,7 @@ import (
 )
 
 // Run ...
-func Run(cfg *config.Config) error {
-
+func Run(ctx context.Context, cfg *config.Config) error {
 	logger := wslog.NewEnv(cfg.Env)
 	logger.Debug("debug", wslog.Any("cfg", cfg))
 
@@ -28,7 +28,6 @@ func Run(cfg *config.Config) error {
 	logger.Debug("DB", "cfg.DB", cfg.DB.String())
 
 	repoInfo := repository.New(dbCon)
-
 	infoUseCase := service.New(repoInfo)
 
 	bodyMessage, title, err := controller.New(cfg, logger, infoUseCase).OutputInfo()
@@ -37,7 +36,6 @@ func Run(cfg *config.Config) error {
 	}
 
 	if cfg.IsSendEmail && cfg.ToSendEmail != "" {
-
 		objNotify := notify.NewEmail(cfg.Mail, bodyMessage, title, cfg.ToSendEmail)
 		emailStatus, err := objNotify.Send()
 		if err != nil {
